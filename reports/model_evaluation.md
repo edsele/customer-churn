@@ -1,6 +1,6 @@
 # Model Evaluation Report
 
-**Selected model:** `logistic_regression`
+**Selected model:** `gradient_boosting`
 
 ## Evaluation protocol
 
@@ -13,13 +13,13 @@
 
 | Metric | Score |
 |---|---:|
-| Accuracy | 0.8197 |
-| Balanced Accuracy | 0.7266 |
-| Precision | 0.7727 |
-| Recall | 0.5126 |
-| F1 | 0.6163 |
-| Roc Auc | 0.8654 |
-| Average Precision | 0.7276 |
+| Accuracy | 0.8226 |
+| Balanced Accuracy | 0.7293 |
+| Precision | 0.7824 |
+| Recall | 0.5151 |
+| F1 | 0.6212 |
+| Roc Auc | 0.8692 |
+| Average Precision | 0.7310 |
 
 ## Candidate comparison (training CV)
 
@@ -27,29 +27,29 @@ These values are from training folds only; the final holdout did not participate
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---:|---:|---:|---:|---:|
-| logistic_regression | 0.8062 | 0.6697 | 0.5058 | 0.5762 | 0.8451 |
-| random_forest | 0.7689 | 0.5419 | 0.7379 | 0.6245 | 0.8405 |
-| gradient_boosting | 0.7996 | 0.6536 | 0.4938 | 0.5623 | 0.8432 |
+| logistic_regression | 0.8032 | 0.6621 | 0.5006 | 0.5701 | 0.8434 |
+| random_forest | 0.7661 | 0.5376 | 0.7395 | 0.6222 | 0.8413 |
+| gradient_boosting | 0.7985 | 0.6505 | 0.4926 | 0.5603 | 0.8444 |
 
 ## Top holdout permutation features
 
-- `tenure`: 0.0365 AUC decrease
-- `Contract`: 0.0262 AUC decrease
-- `support_ticket_proxy`: 0.0222 AUC decrease
-- `support_intensity`: 0.0160 AUC decrease
-- `customer_engagement_score`: 0.0129 AUC decrease
-- `MultipleLines`: 0.0021 AUC decrease
-- `payment_risk_flag`: 0.0018 AUC decrease
-- `PhoneService`: 0.0016 AUC decrease
-- `tenure_bucket`: 0.0016 AUC decrease
-- `InternetService`: 0.0015 AUC decrease
+- `tenure`: 0.0669 AUC decrease
+- `Contract`: 0.0523 AUC decrease
+- `InternetService`: 0.0102 AUC decrease
+- `OnlineSecurity`: 0.0057 AUC decrease
+- `TotalCharges`: 0.0043 AUC decrease
+- `TechSupport`: 0.0036 AUC decrease
+- `MonthlyCharges`: 0.0032 AUC decrease
+- `payment_risk_flag`: 0.0014 AUC decrease
+- `OnlineBackup`: 0.0014 AUC decrease
+- `PaperlessBilling`: 0.0012 AUC decrease
 
 ## Business implications
 
 - Use scores to prioritize outreach, not as a standalone cancellation decision. The source is a historical cross-sectional snapshot, so associations are not causal.
 - The default threshold favors precision over coverage; test a lower operating threshold only with a defined retention-budget trade-off.
 - Positive predictions are concentrated enough to support a targeted offer test, provided campaign uplift is measured experimentally.
-- The strongest holdout permutation signals were tenure, Contract, support_ticket_proxy; investigate them as retention segments rather than causal levers.
+- The strongest holdout permutation signals were tenure, Contract, InternetService; investigate them as retention segments rather than causal levers.
 
 ## Artifacts
 

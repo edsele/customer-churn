@@ -5,16 +5,34 @@
   "validation_passed": true,
   "observed_churn_rate": 0.2653698707936959,
   "scenario_churn_rate": 0.2653809523809524,
-  "selected_model": "logistic_regression",
-  "selection_cv_roc_auc": 0.8451447700914981,
+  "selected_model": "gradient_boosting",
+  "selection_cv_roc_auc": 0.8444099316024728,
   "holdout_metrics": {
-    "accuracy": 0.8197303051809794,
-    "balanced_accuracy": 0.7266078165307248,
-    "precision": 0.7727272727272727,
-    "recall": 0.5125628140703518,
-    "f1": 0.6163141993957704,
-    "roc_auc": 0.865361674843058,
-    "average_precision": 0.7275535276626974
+    "accuracy": 0.8225691980127751,
+    "balanced_accuracy": 0.7293477774629826,
+    "precision": 0.7824427480916031,
+    "recall": 0.5150753768844221,
+    "f1": 0.6212121212121212,
+    "roc_auc": 0.8691851940215419,
+    "average_precision": 0.7310316638746893
   },
-  "dashboard_preview": "dashboard\\screenshots\\executive_summary_preview.png"
+  "dashboard_preview": "dashboard\\screenshots\\executive_summary_preview.png",
+  "run_context": {
+    "generated_at_utc": "2026-07-27T03:09:17.346428Z",
+    "git_revision": "fbdd8644c0b529ef57125f9c6ee7932e085edda7",
+    "python_version": "3.10.11",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "raw_data_sha256": "88be4b93fbe0cc83421af1c503794c97c342eca914c1576db7c276e61d61358a",
+    "config_sha256": "3a694b737a56675fbcfaf99f07056bff6b75747ad86d458bb84819457ef96cda",
+    "package_versions": {
+      "joblib": "1.4.2",
+      "matplotlib": "3.8.3",
+      "numpy": "1.26.4",
+      "pandas": "2.2.1",
+      "PyYAML": "6.0.1",
+      "scikit-learn": "1.5.1",
+      "seaborn": "0.13.2",
+      "SQLAlchemy": "2.0.51"
+    }
+  }
 }

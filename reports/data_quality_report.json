@@ -12,5 +12,15 @@
   "range_violations": {},
   "scenario_churn_rate": 0.2653809523809524,
   "scenario_churn_rate_delta": 1.1081587256489556e-05,
+  "scenario_distribution_checks": {
+    "Contract_max_distribution_delta": 0.002427597817488497,
+    "InternetService_max_distribution_delta": 0.0022404616539218047,
+    "PaymentMethod_max_distribution_delta": 0.005062737064156941,
+    "churn_rate_delta": 1.1081587256489556e-05,
+    "monthly_charge_mean_delta": 0.20895658701986974,
+    "observed_churn_rate": 0.2653698707936959,
+    "scenario_churn_rate": 0.2653809523809524,
+    "tenure_mean_delta": -0.016481991575560073
+  },
   "scenario_rows": 21000
 }

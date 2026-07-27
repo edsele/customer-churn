@@ -1,5 +1,5 @@
 {
-  "model_name": "logistic_regression",
+  "model_name": "gradient_boosting",
   "evaluation_protocol": {
     "population": "Observed IBM Telco customer snapshots only",
     "holdout": "20% source-disjoint, stratified holdout",
@@ -7,208 +7,208 @@
     "threshold": 0.5
   },
   "holdout_metrics": {
-    "accuracy": 0.8197303051809794,
-    "balanced_accuracy": 0.7266078165307248,
-    "precision": 0.7727272727272727,
-    "recall": 0.5125628140703518,
-    "f1": 0.6163141993957704,
-    "roc_auc": 0.865361674843058,
-    "average_precision": 0.7275535276626974
+    "accuracy": 0.8225691980127751,
+    "balanced_accuracy": 0.7293477774629826,
+    "precision": 0.7824427480916031,
+    "recall": 0.5150753768844221,
+    "f1": 0.6212121212121212,
+    "roc_auc": 0.8691851940215419,
+    "average_precision": 0.7310316638746893
   },
   "training_cross_validation": {
     "accuracy": {
-      "mean": 0.8061763496038619,
-      "std": 0.0036423334322239743,
+      "mean": 0.7985443679363783,
+      "std": 0.0038562390906073255,
       "scores": [
-        0.8110026619343389,
-        0.8021295474711624,
-        0.8037300177619894,
-        0.8039041703637977,
-        0.8101153504880213
+        0.805678793256433,
+        0.7941437444543035,
+        0.7975133214920072,
+        0.7968056787932565,
+        0.7985803016858918
       ]
     },
     "balanced_accuracy": {
-      "mean": 0.7089568671896009,
-      "std": 0.010505616176087671,
+      "mean": 0.6996070722488998,
+      "std": 0.007670930078584319,
       "scores": [
-        0.7073964497041421,
-        0.7145051992055147,
-        0.6956062508483779,
-        0.70146135651206,
-        0.7258150796779098
+        0.7014834865080364,
+        0.7022296218405577,
+        0.6926878308673816,
+        0.6900234078948445,
+        0.7116110141336787
       ]
     },
     "precision": {
-      "mean": 0.6696702704612969,
-      "std": 0.022177272464873075,
+      "mean": 0.6505292351022576,
+      "std": 0.023378597976093343,
       "scores": [
-        0.6619718309859155,
-        0.7025862068965517,
-        0.6350710900473934,
-        0.6682242990654206,
-        0.6804979253112033
+        0.6465116279069767,
+        0.6872246696035242,
+        0.6136363636363636,
+        0.6523809523809524,
+        0.6528925619834711
       ]
     },
     "recall": {
-      "mean": 0.5058230155865652,
-      "std": 0.022404101702445247,
+      "mean": 0.49262532244180895,
+      "std": 0.018545689111423912,
       "scores": [
-        0.5,
-        0.5141955835962145,
-        0.48201438848920863,
-        0.4880546075085324,
-        0.5448504983388704
+        0.4929078014184397,
+        0.4921135646687697,
+        0.4856115107913669,
+        0.46757679180887374,
+        0.5249169435215947
       ]
     },
     "f1": {
-      "mean": 0.5761659533699051,
-      "std": 0.02063822295193174,
+      "mean": 0.5603475902972238,
+      "std": 0.015593786012320884,
       "scores": [
-        0.5696969696969697,
-        0.5938069216757741,
-        0.5480572597137015,
-        0.5641025641025641,
-        0.6051660516605166
+        0.5593561368209256,
+        0.5735294117647058,
+        0.5421686746987951,
+        0.5447316103379721,
+        0.58195211786372
       ]
     },
     "roc_auc": {
-      "mean": 0.8451447700914981,
-      "std": 0.007043741051563315,
+      "mean": 0.8444099316024728,
+      "std": 0.00720971082843527,
       "scores": [
-        0.8442548994922154,
-        0.8385344861159792,
-        0.8370753868603231,
-        0.8558675244105057,
-        0.8499915535784673
+        0.8399198455663268,
+        0.8439478911087744,
+        0.8341506040450659,
+        0.8550633895613884,
+        0.8489679277308085
       ]
     },
     "average_precision": {
-      "mean": 0.656331241183193,
-      "std": 0.02320009913882051,
+      "mean": 0.6523837854110479,
+      "std": 0.028525939967482716,
       "scores": [
-        0.6233706958262842,
-        0.687209455485734,
-        0.6362896703850909,
-        0.6658178739077903,
-        0.6689685103110653
+        0.6158483654272723,
+        0.6911936699519842,
+        0.623397034272864,
+        0.6618285775967555,
+        0.6696512798063634
       ]
     }
   },
   "candidate_comparison": {
     "logistic_regression": {
-      "accuracy": 0.8061763496038619,
-      "balanced_accuracy": 0.7089568671896009,
-      "precision": 0.6696702704612969,
-      "recall": 0.5058230155865652,
-      "f1": 0.5761659533699051,
-      "roc_auc": 0.8451447700914981,
-      "average_precision": 0.656331241183193,
-      "selection_roc_auc": 0.8451447700914981
+      "accuracy": 0.8031596482905465,
+      "balanced_accuracy": 0.7052584878999276,
+      "precision": 0.6621388115679825,
+      "recall": 0.5006114532312326,
+      "f1": 0.5701076452322157,
+      "roc_auc": 0.8433769663972601,
+      "average_precision": 0.6479356216531267,
+      "selection_roc_auc": 0.8433769663972601
     },
     "random_forest": {
-      "accuracy": 0.7689018614627872,
-      "balanced_accuracy": 0.7589275494404364,
-      "precision": 0.5418701121308308,
-      "recall": 0.7378638311064302,
-      "f1": 0.6245446783412137,
-      "roc_auc": 0.8405232767903431,
-      "average_precision": 0.6434209131603938,
-      "selection_roc_auc": 0.8405232767903431
+      "accuracy": 0.7660619920220773,
+      "balanced_accuracy": 0.7575997719100455,
+      "precision": 0.5376449796440255,
+      "recall": 0.7395196007501965,
+      "f1": 0.6221568793321801,
+      "roc_auc": 0.8412943829028358,
+      "average_precision": 0.6443536595967622,
+      "selection_roc_auc": 0.8412943829028358
     },
     "gradient_boosting": {
-      "accuracy": 0.7996091416719595,
-      "balanced_accuracy": 0.7006713771119668,
-      "precision": 0.653557728167355,
-      "recall": 0.49382369548952865,
-      "f1": 0.5623029271744855,
-      "roc_auc": 0.8432132100963015,
-      "average_precision": 0.6504290257388261,
-      "selection_roc_auc": 0.8432132100963015
+      "accuracy": 0.7985443679363783,
+      "balanced_accuracy": 0.6996070722488998,
+      "precision": 0.6505292351022576,
+      "recall": 0.49262532244180895,
+      "f1": 0.5603475902972238,
+      "roc_auc": 0.8444099316024728,
+      "average_precision": 0.6523837854110479,
+      "selection_roc_auc": 0.8444099316024728
     }
   },
   "classification_report": {
     "0": {
-      "precision": 0.8305676855895197,
-      "recall": 0.9406528189910979,
-      "f1-score": 0.8821892393320965,
+      "precision": 0.8317349607672189,
+      "recall": 0.9436201780415431,
+      "f1-score": 0.8841519925857275,
       "support": 1011.0
     },
     "1": {
-      "precision": 0.7727272727272727,
-      "recall": 0.5125628140703518,
-      "f1-score": 0.6163141993957704,
+      "precision": 0.7824427480916031,
+      "recall": 0.5150753768844221,
+      "f1-score": 0.6212121212121212,
       "support": 398.0
     },
-    "accuracy": 0.8197303051809794,
+    "accuracy": 0.8225691980127751,
     "macro avg": {
-      "precision": 0.8016474791583962,
-      "recall": 0.7266078165307248,
-      "f1-score": 0.7492517193639334,
+      "precision": 0.807088854429411,
+      "recall": 0.7293477774629826,
+      "f1-score": 0.7526820568989243,
       "support": 1409.0
     },
     "weighted avg": {
-      "precision": 0.814229513609978,
-      "recall": 0.8197303051809794,
-      "f1-score": 0.8070875602017503,
+      "precision": 0.8178113974990179,
+      "recall": 0.8225691980127751,
+      "f1-score": 0.8098794100401666,
       "support": 1409.0
     }
   },
   "top_permutation_features": [
     {
       "feature": "tenure",
-      "importance_mean": 0.036545238556779935,
-      "importance_std": 0.0034933910218509
+      "importance_mean": 0.06685432188969906,
+      "importance_std": 0.004627538998943686
     },
     {
       "feature": "Contract",
-      "importance_mean": 0.026236834518785834,
-      "importance_std": 0.0033714712953702183
-    },
-    {
-      "feature": "support_ticket_proxy",
-      "importance_mean": 0.022175044361272257,
-      "importance_std": 0.004951589523114594
-    },
-    {
-      "feature": "support_intensity",
-      "importance_mean": 0.016014377856973638,
-      "importance_std": 0.002423765690738227
-    },
-    {
-      "feature": "customer_engagement_score",
-      "importance_mean": 0.012874709849942064,
-      "importance_std": 0.001601263810580971
-    },
-    {
-      "feature": "MultipleLines",
-      "importance_mean": 0.0020809620141591747,
-      "importance_std": 0.0009039454631036628
-    },
-    {
-      "feature": "payment_risk_flag",
-      "importance_mean": 0.001791951017865473,
-      "importance_std": 0.0007275647424396903
-    },
-    {
-      "feature": "PhoneService",
-      "importance_mean": 0.001641077129796692,
-      "importance_std": 0.000747670919779867
-    },
-    {
-      "feature": "tenure_bucket",
-      "importance_mean": 0.0015687984929593501,
-      "importance_std": 0.0005396997177168965
+      "importance_mean": 0.0523325289487331,
+      "importance_std": 0.004810999451026845
     },
     {
       "feature": "InternetService",
-      "importance_mean": 0.001523132477421742,
-      "importance_std": 0.0013826984247248398
+      "importance_mean": 0.010175030278328676,
+      "importance_std": 0.0025731156824632118
+    },
+    {
+      "feature": "OnlineSecurity",
+      "importance_mean": 0.005695204509192836,
+      "importance_std": 0.0012691733899007575
+    },
+    {
+      "feature": "TotalCharges",
+      "importance_mean": 0.004310105588940387,
+      "importance_std": 0.0006259887597150895
+    },
+    {
+      "feature": "TechSupport",
+      "importance_mean": 0.003642511933223643,
+      "importance_std": 0.0023856039968986917
+    },
+    {
+      "feature": "MonthlyCharges",
+      "importance_mean": 0.0031884405542383734,
+      "importance_std": 0.0014287376926038942
+    },
+    {
+      "feature": "payment_risk_flag",
+      "importance_mean": 0.001427761955176493,
+      "importance_std": 0.0007914146979738832
+    },
+    {
+      "feature": "OnlineBackup",
+      "importance_mean": 0.0013624212390670558,
+      "importance_std": 0.0006566500507694752
+    },
+    {
+      "feature": "PaperlessBilling",
+      "importance_mean": 0.0011753044815240217,
+      "importance_std": 0.0007658631314873687
     }
   ],
   "business_implications": [
     "Use scores to prioritize outreach, not as a standalone cancellation decision. The source is a historical cross-sectional snapshot, so associations are not causal.",
     "The default threshold favors precision over coverage; test a lower operating threshold only with a defined retention-budget trade-off.",
     "Positive predictions are concentrated enough to support a targeted offer test, provided campaign uplift is measured experimentally.",
-    "The strongest holdout permutation signals were tenure, Contract, support_ticket_proxy; investigate them as retention segments rather than causal levers."
+    "The strongest holdout permutation signals were tenure, Contract, InternetService; investigate them as retention segments rather than causal levers."
   ]
 }
