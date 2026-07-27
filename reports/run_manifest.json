@@ -1,0 +1,20 @@
+{
+  "project_version": "1.1.0",
+  "observed_records": 7043,
+  "analytics_scenario_records": 21000,
+  "validation_passed": true,
+  "observed_churn_rate": 0.2653698707936959,
+  "scenario_churn_rate": 0.2653809523809524,
+  "selected_model": "logistic_regression",
+  "selection_cv_roc_auc": 0.8451447700914981,
+  "holdout_metrics": {
+    "accuracy": 0.8197303051809794,
+    "balanced_accuracy": 0.7266078165307248,
+    "precision": 0.7727272727272727,
+    "recall": 0.5125628140703518,
+    "f1": 0.6163141993957704,
+    "roc_auc": 0.865361674843058,
+    "average_precision": 0.7275535276626974
+  },
+  "dashboard_preview": "dashboard\\screenshots\\executive_summary_preview.png"
+}

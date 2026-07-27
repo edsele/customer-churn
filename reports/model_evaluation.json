@@ -1,0 +1,214 @@
+{
+  "model_name": "logistic_regression",
+  "evaluation_protocol": {
+    "population": "Observed IBM Telco customer snapshots only",
+    "holdout": "20% source-disjoint, stratified holdout",
+    "selection": "ROC-AUC cross-validation on training data only",
+    "threshold": 0.5
+  },
+  "holdout_metrics": {
+    "accuracy": 0.8197303051809794,
+    "balanced_accuracy": 0.7266078165307248,
+    "precision": 0.7727272727272727,
+    "recall": 0.5125628140703518,
+    "f1": 0.6163141993957704,
+    "roc_auc": 0.865361674843058,
+    "average_precision": 0.7275535276626974
+  },
+  "training_cross_validation": {
+    "accuracy": {
+      "mean": 0.8061763496038619,
+      "std": 0.0036423334322239743,
+      "scores": [
+        0.8110026619343389,
+        0.8021295474711624,
+        0.8037300177619894,
+        0.8039041703637977,
+        0.8101153504880213
+      ]
+    },
+    "balanced_accuracy": {
+      "mean": 0.7089568671896009,
+      "std": 0.010505616176087671,
+      "scores": [
+        0.7073964497041421,
+        0.7145051992055147,
+        0.6956062508483779,
+        0.70146135651206,
+        0.7258150796779098
+      ]
+    },
+    "precision": {
+      "mean": 0.6696702704612969,
+      "std": 0.022177272464873075,
+      "scores": [
+        0.6619718309859155,
+        0.7025862068965517,
+        0.6350710900473934,
+        0.6682242990654206,
+        0.6804979253112033
+      ]
+    },
+    "recall": {
+      "mean": 0.5058230155865652,
+      "std": 0.022404101702445247,
+      "scores": [
+        0.5,
+        0.5141955835962145,
+        0.48201438848920863,
+        0.4880546075085324,
+        0.5448504983388704
+      ]
+    },
+    "f1": {
+      "mean": 0.5761659533699051,
+      "std": 0.02063822295193174,
+      "scores": [
+        0.5696969696969697,
+        0.5938069216757741,
+        0.5480572597137015,
+        0.5641025641025641,
+        0.6051660516605166
+      ]
+    },
+    "roc_auc": {
+      "mean": 0.8451447700914981,
+      "std": 0.007043741051563315,
+      "scores": [
+        0.8442548994922154,
+        0.8385344861159792,
+        0.8370753868603231,
+        0.8558675244105057,
+        0.8499915535784673
+      ]
+    },
+    "average_precision": {
+      "mean": 0.656331241183193,
+      "std": 0.02320009913882051,
+      "scores": [
+        0.6233706958262842,
+        0.687209455485734,
+        0.6362896703850909,
+        0.6658178739077903,
+        0.6689685103110653
+      ]
+    }
+  },
+  "candidate_comparison": {
+    "logistic_regression": {
+      "accuracy": 0.8061763496038619,
+      "balanced_accuracy": 0.7089568671896009,
+      "precision": 0.6696702704612969,
+      "recall": 0.5058230155865652,
+      "f1": 0.5761659533699051,
+      "roc_auc": 0.8451447700914981,
+      "average_precision": 0.656331241183193,
+      "selection_roc_auc": 0.8451447700914981
+    },
+    "random_forest": {
+      "accuracy": 0.7689018614627872,
+      "balanced_accuracy": 0.7589275494404364,
+      "precision": 0.5418701121308308,
+      "recall": 0.7378638311064302,
+      "f1": 0.6245446783412137,
+      "roc_auc": 0.8405232767903431,
+      "average_precision": 0.6434209131603938,
+      "selection_roc_auc": 0.8405232767903431
+    },
+    "gradient_boosting": {
+      "accuracy": 0.7996091416719595,
+      "balanced_accuracy": 0.7006713771119668,
+      "precision": 0.653557728167355,
+      "recall": 0.49382369548952865,
+      "f1": 0.5623029271744855,
+      "roc_auc": 0.8432132100963015,
+      "average_precision": 0.6504290257388261,
+      "selection_roc_auc": 0.8432132100963015
+    }
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.8305676855895197,
+      "recall": 0.9406528189910979,
+      "f1-score": 0.8821892393320965,
+      "support": 1011.0
+    },
+    "1": {
+      "precision": 0.7727272727272727,
+      "recall": 0.5125628140703518,
+      "f1-score": 0.6163141993957704,
+      "support": 398.0
+    },
+    "accuracy": 0.8197303051809794,
+    "macro avg": {
+      "precision": 0.8016474791583962,
+      "recall": 0.7266078165307248,
+      "f1-score": 0.7492517193639334,
+      "support": 1409.0
+    },
+    "weighted avg": {
+      "precision": 0.814229513609978,
+      "recall": 0.8197303051809794,
+      "f1-score": 0.8070875602017503,
+      "support": 1409.0
+    }
+  },
+  "top_permutation_features": [
+    {
+      "feature": "tenure",
+      "importance_mean": 0.036545238556779935,
+      "importance_std": 0.0034933910218509
+    },
+    {
+      "feature": "Contract",
+      "importance_mean": 0.026236834518785834,
+      "importance_std": 0.0033714712953702183
+    },
+    {
+      "feature": "support_ticket_proxy",
+      "importance_mean": 0.022175044361272257,
+      "importance_std": 0.004951589523114594
+    },
+    {
+      "feature": "support_intensity",
+      "importance_mean": 0.016014377856973638,
+      "importance_std": 0.002423765690738227
+    },
+    {
+      "feature": "customer_engagement_score",
+      "importance_mean": 0.012874709849942064,
+      "importance_std": 0.001601263810580971
+    },
+    {
+      "feature": "MultipleLines",
+      "importance_mean": 0.0020809620141591747,
+      "importance_std": 0.0009039454631036628
+    },
+    {
+      "feature": "payment_risk_flag",
+      "importance_mean": 0.001791951017865473,
+      "importance_std": 0.0007275647424396903
+    },
+    {
+      "feature": "PhoneService",
+      "importance_mean": 0.001641077129796692,
+      "importance_std": 0.000747670919779867
+    },
+    {
+      "feature": "tenure_bucket",
+      "importance_mean": 0.0015687984929593501,
+      "importance_std": 0.0005396997177168965
+    },
+    {
+      "feature": "InternetService",
+      "importance_mean": 0.001523132477421742,
+      "importance_std": 0.0013826984247248398
+    }
+  ],
+  "business_implications": [
+    "Use scores to prioritize outreach, not as a standalone cancellation decision. The source is a historical cross-sectional snapshot, so associations are not causal.",
+    "The default threshold favors precision over coverage; test a lower operating threshold only with a defined retention-budget trade-off.",
+    "Positive predictions are concentrated enough to support a targeted offer test, provided campaign uplift is measured experimentally.",
+    "The strongest holdout permutation signals were tenure, Contract, support_ticket_proxy; investigate them as retention segments rather than causal levers."
+  ]
+}
