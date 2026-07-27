@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Generated data artifacts (rebuild with `python run_pipeline.py`)
+data/processed/*
+!data/processed/.gitkeep
+data/exports/*
+!data/exports/.gitkeep
+*.db-journal
+
+# Models (reproducible pipeline outputs)
+models/*
+!models/.gitkeep
+
+# Generated report figures are kept as project evidence.
+reports/figures/*
+!reports/figures/.gitkeep
+!reports/figures/*.png
+
+# Keep the portable dashboard preview; add verified Tableau screenshots here.
+dashboard/screenshots/*
+!dashboard/screenshots/.gitkeep
+!dashboard/screenshots/*.png
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tableau
+*.~twb
+*.~twbx
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/

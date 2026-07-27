@@ -1,0 +1,71 @@
+project:
+  name: "Customer Churn & Behavioral Analytics"
+  version: "1.1.0"
+  model_version: "2026.07"
+  random_seed: 42
+
+paths:
+  raw_data: "data/raw/Telco-Customer-Churn.csv"
+  processed_data: "data/processed/customers_clean.csv"
+  scenario_data: "data/processed/customers_analytics_scenario.csv"
+  features_data: "data/processed/customers_features.csv"
+  scored_data: "data/processed/customers_scored.csv"
+  database: "data/processed/churn_analytics.db"
+  validation_report: "reports/data_quality_report.json"
+  models_dir: "models"
+  figures_dir: "reports/figures"
+  tableau_export: "data/exports/tableau_dashboard_data.csv"
+  dashboard_preview: "dashboard/screenshots/executive_summary_preview.png"
+
+data:
+  target_records: 21000
+  test_size: 0.20
+  churn_column: "Churn"
+  id_column: "customerID"
+  source_id_column: "source_customer_id"
+  record_source_column: "record_source"
+  observed_label: "observed"
+  synthetic_label: "synthetic_cohort"
+
+validation:
+  required_columns:
+    - customerID
+    - gender
+    - SeniorCitizen
+    - Partner
+    - Dependents
+    - tenure
+    - PhoneService
+    - InternetService
+    - Contract
+    - PaymentMethod
+    - MonthlyCharges
+    - TotalCharges
+    - Churn
+  numeric_ranges:
+    tenure: [0, 72]
+    MonthlyCharges: [0, 200]
+    TotalCharges: [0, 10000]
+  allowed_churn_values: ["Yes", "No"]
+
+augmentation:
+  enabled: true
+  max_tenure_jitter_months: 2
+  monthly_charge_jitter_pct: 0.03
+  minimum_distribution_similarity: 0.97
+
+modeling:
+  models:
+    - logistic_regression
+    - random_forest
+    - gradient_boosting
+  enable_xgboost: false
+  cv_folds: 5
+  scoring: "roc_auc"
+  randomized_search_iterations: 12
+  risk_threshold: 0.60
+  n_jobs: -1
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
