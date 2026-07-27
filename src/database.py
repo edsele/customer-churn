@@ -94,19 +94,13 @@ def run_sql_script(script_path: Path, db_path: Path | None = None) -> pd.DataFra
 
 def _strip_sql_comments(sql: str) -> str:
     """Remove full-line SQL comments for lightweight statement classification."""
-    return "\n".join(
-        line for line in sql.splitlines() if not line.lstrip().startswith("--")
-    )
+    return "\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
 
 
 def _split_statements(sql: str) -> list[str]:
     """Split the project's simple, semicolon-terminated SQL assets."""
     uncommented_sql = _strip_sql_comments(sql)
-    return [
-        statement.strip()
-        for statement in uncommented_sql.split(";")
-        if statement.strip()
-    ]
+    return [statement.strip() for statement in uncommented_sql.split(";") if statement.strip()]
 
 
 def initialize_database(
@@ -114,19 +108,29 @@ def initialize_database(
     db_path: Path | None = None,
 ) -> Engine:
     """Materialize customer and prediction tables, indexes, and reporting views."""
+    if (
+        scored_customers["customerID"].isna().any()
+        or scored_customers["customerID"].duplicated().any()
+    ):
+        raise ValueError(
+            "The SQLite customer table requires one non-null, unique customerID per row."
+        )
+
     engine = get_engine(db_path)
     with engine.begin() as connection:
         for view_name in VIEW_NAMES:
             connection.execute(text(f"DROP VIEW IF EXISTS {view_name}"))
+        connection.execute(text(f"DROP TABLE IF EXISTS {PREDICTIONS_TABLE}"))
 
     scored_customers.to_sql(CUSTOMERS_TABLE, engine, if_exists="replace", index=False)
-    predictions = build_prediction_table(scored_customers)
-    predictions.to_sql(PREDICTIONS_TABLE, engine, if_exists="replace", index=False)
 
     views_script = resolve_path("sql/00_create_views.sql")
     if not views_script.exists():
         raise FileNotFoundError(f"Required SQL view script not found: {views_script}")
     run_sql_script(views_script, db_path)
+
+    predictions = build_prediction_table(scored_customers)
+    predictions.to_sql(PREDICTIONS_TABLE, engine, if_exists="append", index=False)
     logger.info(
         "Initialized SQLite data mart with %d customers and %d prediction rows.",
         len(scored_customers),
@@ -147,17 +151,21 @@ def export_tableau_dataset(
 
     if "Churn" in export.columns:
         export["ChurnLabel"] = export["Churn"].map({1: "Yes", 0: "No"}).fillna("Unknown")
-    export["AgeGroup"] = export["SeniorCitizen"].map(
-        {1: "Senior (65+)", 0: "Non-Senior"}
-    ).fillna("Unknown")
+    export["AgeGroup"] = (
+        export["SeniorCitizen"].map({1: "Senior (65+)", 0: "Non-Senior"}).fillna("Unknown")
+    )
     export["predicted_churn_probability"] = export.get(
         "churn_probability",
         pd.Series(np.nan, index=export.index),
     )
-    export["HighRiskFlag"] = export.get(
-        "is_high_risk",
-        pd.Series(0, index=export.index),
-    ).fillna(0).astype(int)
+    export["HighRiskFlag"] = (
+        export.get(
+            "is_high_risk",
+            pd.Series(0, index=export.index),
+        )
+        .fillna(0)
+        .astype(int)
+    )
     export["revenue_at_risk"] = export.get(
         "revenue_at_risk",
         export["MonthlyCharges"] * export["predicted_churn_probability"],

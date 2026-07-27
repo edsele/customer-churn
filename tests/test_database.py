@@ -24,11 +24,11 @@ def _scored_fixture() -> pd.DataFrame:
     data["predicted_churn_probability"] = data["churn_probability"]
     data["risk_band"] = pd.cut(
         data["churn_probability"],
-        bins=[-0.01, 0.35, 0.6, 1.0],
+        bins=[-0.01, 0.35, 0.5, 1.0],
         labels=["Low", "Medium", "High"],
     ).astype(str)
-    data["is_high_risk"] = (data["churn_probability"] >= 0.6).astype(int)
-    data["decision_threshold"] = 0.6
+    data["is_high_risk"] = (data["churn_probability"] >= 0.5).astype(int)
+    data["decision_threshold"] = 0.5
     data["revenue_at_risk"] = data["MonthlyCharges"] * data["churn_probability"]
     data["model_name"] = "test_model"
     data["model_version"] = "test"
@@ -43,6 +43,9 @@ def test_database_views_and_sql_queries_execute(tmp_path: Path) -> None:
 
     view_rows = execute_query("SELECT COUNT(*) AS count FROM v_customer_analytics", database_path)
     assert int(view_rows.loc[0, "count"]) == len(data)
+    prediction_schema = execute_query("PRAGMA table_info(customer_predictions)", database_path)
+    primary_key = prediction_schema.loc[prediction_schema["name"] == "customerID", "pk"]
+    assert int(primary_key.iloc[0]) == 1
     high_risk = execute_query("SELECT * FROM v_high_risk_customers", database_path)
     assert not high_risk.empty
 

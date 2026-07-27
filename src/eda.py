@@ -29,26 +29,41 @@ def load_analysis_data() -> pd.DataFrame:
     raise FileNotFoundError("No pipeline output found. Run run_pipeline.py first.")
 
 
+def select_observed_records(data: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Return observed records and the number of excluded scenario descendants."""
+    data_config = load_config()["data"]
+    source_column = data_config["record_source_column"]
+    observed_label = data_config["observed_label"]
+    if source_column not in data.columns:
+        return data.copy(), 0
+
+    observed = data.loc[data[source_column].astype(str) == observed_label].copy()
+    if observed.empty:
+        return data.copy(), 0
+    return observed, len(data) - len(observed)
+
+
 def generate_eda_figures(
     df: pd.DataFrame,
     output_dir: Path | None = None,
 ) -> list[Path]:
-    """Generate core segmentation, behavior, and correlation figures."""
+    """Generate core figures from observed customers only when lineage is present."""
     config = load_config()
+    analysis_data, _ = select_observed_records(df)
     figures_dir = output_dir or resolve_path(config["paths"]["figures_dir"])
     figures_dir.mkdir(parents=True, exist_ok=True)
     churn_col = config["data"]["churn_column"]
 
     figures = [
-        _plot_churn_rate(df, churn_col, figures_dir),
-        _plot_tenure_analysis(df, churn_col, figures_dir),
-        _plot_monthly_charges(df, churn_col, figures_dir),
-        _plot_contract_churn(df, churn_col, figures_dir),
-        _plot_payment_method(df, churn_col, figures_dir),
-        _plot_internet_service(df, churn_col, figures_dir),
-        _plot_support_proxy(df, churn_col, figures_dir),
-        _plot_correlation_heatmap(df, figures_dir),
-        _plot_demographics(df, churn_col, figures_dir),
+        _plot_churn_rate(analysis_data, churn_col, figures_dir),
+        _plot_tenure_analysis(analysis_data, churn_col, figures_dir),
+        _plot_monthly_charges(analysis_data, churn_col, figures_dir),
+        _plot_contract_churn(analysis_data, churn_col, figures_dir),
+        _plot_payment_method(analysis_data, churn_col, figures_dir),
+        _plot_internet_service(analysis_data, churn_col, figures_dir),
+        _plot_support_proxy(analysis_data, churn_col, figures_dir),
+        _plot_correlation_heatmap(analysis_data, figures_dir),
+        _plot_demographics(analysis_data, churn_col, figures_dir),
     ]
     logger.info("Generated %d EDA figures in %s", len(figures), figures_dir)
     return figures
@@ -80,9 +95,7 @@ def _plot_churn_rate(df: pd.DataFrame, churn_col: str, output_dir: Path) -> Path
 def _plot_tenure_analysis(df: pd.DataFrame, churn_col: str, output_dir: Path) -> Path:
     path = output_dir / "eda_tenure_analysis.png"
     plotting_data = df.copy()
-    plotting_data["Churn status"] = plotting_data[churn_col].map(
-        {0: "Retained", 1: "Churned"}
-    )
+    plotting_data["Churn status"] = plotting_data[churn_col].map({0: "Retained", 1: "Churned"})
     figure, axis = plt.subplots(figsize=(10, 5))
     sns.histplot(
         data=plotting_data,
@@ -103,9 +116,7 @@ def _plot_tenure_analysis(df: pd.DataFrame, churn_col: str, output_dir: Path) ->
 def _plot_monthly_charges(df: pd.DataFrame, churn_col: str, output_dir: Path) -> Path:
     path = output_dir / "eda_monthly_charges.png"
     plotting_data = df.copy()
-    plotting_data["Churn status"] = plotting_data[churn_col].map(
-        {0: "Retained", 1: "Churned"}
-    )
+    plotting_data["Churn status"] = plotting_data[churn_col].map({0: "Retained", 1: "Churned"})
     figure, axis = plt.subplots(figsize=(8, 5))
     sns.boxplot(
         data=plotting_data,
@@ -133,9 +144,7 @@ def _plot_contract_churn(df: pd.DataFrame, churn_col: str, output_dir: Path) -> 
 
 def _plot_payment_method(df: pd.DataFrame, churn_col: str, output_dir: Path) -> Path:
     path = output_dir / "eda_payment_method.png"
-    churn_by_payment = (
-        df.groupby("PaymentMethod", observed=True)[churn_col].mean().sort_values()
-    )
+    churn_by_payment = df.groupby("PaymentMethod", observed=True)[churn_col].mean().sort_values()
     figure, axis = plt.subplots(figsize=(10, 5))
     churn_by_payment.mul(100).plot(kind="barh", color="#7c3aed", ax=axis)
     axis.set(xlabel="Observed churn rate (%)", ylabel="Payment method")
@@ -145,9 +154,7 @@ def _plot_payment_method(df: pd.DataFrame, churn_col: str, output_dir: Path) -> 
 
 def _plot_internet_service(df: pd.DataFrame, churn_col: str, output_dir: Path) -> Path:
     path = output_dir / "eda_internet_service.png"
-    churn_by_internet = (
-        df.groupby("InternetService", observed=True)[churn_col].mean().sort_values()
-    )
+    churn_by_internet = df.groupby("InternetService", observed=True)[churn_col].mean().sort_values()
     figure, axis = plt.subplots(figsize=(8, 5))
     churn_by_internet.mul(100).plot(kind="bar", color="#0891b2", ax=axis)
     axis.set(xlabel="Internet service", ylabel="Observed churn rate (%)")
@@ -163,9 +170,10 @@ def _plot_support_proxy(df: pd.DataFrame, churn_col: str, output_dir: Path) -> P
         return path
     summary = df.groupby(proxy_column, observed=True)[churn_col].agg(["mean", "count"])
     figure, axis = plt.subplots(figsize=(8, 5))
-    axis.bar(summary.index.astype(str), summary["mean"] * 100, color="#f59e0b")
+    axis.bar(summary.index.to_numpy(), summary["mean"] * 100, color="#f59e0b")
+    axis.set_xticks(summary.index.to_numpy())
     axis.set(
-        xlabel="Estimated support-ticket proxy",
+        xlabel="Estimated support-contact proxy",
         ylabel="Observed churn rate (%)",
         title="Observed Churn by Estimated Support-Need Proxy",
     )
@@ -211,37 +219,46 @@ def _plot_demographics(df: pd.DataFrame, churn_col: str, output_dir: Path) -> Pa
     return _save_figure(figure, path)
 
 
-def generate_eda_summary(df: pd.DataFrame) -> str:
-    """Create a values-driven Markdown summary with appropriately bounded claims."""
-    churn_rate = float(df["Churn"].mean() * 100)
-    contract_rates = df.groupby("Contract", observed=True)["Churn"].mean().sort_values(
-        ascending=False
+def generate_eda_summary(
+    df: pd.DataFrame,
+    excluded_scenario_records: int | None = None,
+) -> str:
+    """Create a values-driven Markdown summary with bounded source claims."""
+    analysis_data, inferred_excluded_records = select_observed_records(df)
+    scenario_records = (
+        inferred_excluded_records
+        if excluded_scenario_records is None
+        else excluded_scenario_records
     )
-    internet_rates = df.groupby("InternetService", observed=True)["Churn"].mean().sort_values(
-        ascending=False
+    churn_rate = float(analysis_data["Churn"].mean() * 100)
+    contract_rates = (
+        analysis_data.groupby("Contract", observed=True)["Churn"]
+        .mean()
+        .sort_values(ascending=False)
     )
-    payment_rates = df.groupby("PaymentMethod", observed=True)["Churn"].mean().sort_values(
-        ascending=False
+    internet_rates = (
+        analysis_data.groupby("InternetService", observed=True)["Churn"]
+        .mean()
+        .sort_values(ascending=False)
     )
-    onboarding_rate = float(df.loc[df["tenure"] <= 6, "Churn"].mean() * 100)
-    mature_rate = float(df.loc[df["tenure"] > 24, "Churn"].mean() * 100)
-    source_counts = (
-        df["record_source"].value_counts().to_dict()
-        if "record_source" in df.columns
-        else {"observed": len(df)}
+    payment_rates = (
+        analysis_data.groupby("PaymentMethod", observed=True)["Churn"]
+        .mean()
+        .sort_values(ascending=False)
     )
+    onboarding_rate = float(analysis_data.loc[analysis_data["tenure"] <= 6, "Churn"].mean() * 100)
+    mature_rate = float(analysis_data.loc[analysis_data["tenure"] > 24, "Churn"].mean() * 100)
 
     lines = [
         "# Exploratory Data Analysis Summary",
         "",
         "## Scope",
         "",
-        f"- **Customer records analyzed:** {len(df):,}",
-        f"- **Observed source records:** {source_counts.get('observed', 0):,}",
-        f"- **Synthetic cohort scenario records:** {source_counts.get('synthetic_cohort', 0):,}",
+        f"- **Observed source customers analyzed:** {len(analysis_data):,}",
+        f"- **Synthetic scenario records excluded from findings:** {scenario_records:,}",
         f"- **Observed churn rate:** {churn_rate:.1f}%",
-        f"- **Average tenure:** {df['tenure'].mean():.1f} months",
-        f"- **Average monthly charge (MRR proxy):** ${df['MonthlyCharges'].mean():,.2f}",
+        f"- **Average tenure:** {analysis_data['tenure'].mean():.1f} months",
+        f"- **Average monthly charge (MRR proxy):** ${analysis_data['MonthlyCharges'].mean():,.2f}",
         "",
         "## Segment findings",
         "",
@@ -249,30 +266,34 @@ def generate_eda_summary(df: pd.DataFrame) -> str:
         f"rate ({contract_rates.iloc[0] * 100:.1f}%).",
         f"2. **{internet_rates.index[0]}** customers have the highest observed churn "
         f"rate among internet-service groups ({internet_rates.iloc[0] * 100:.1f}%).",
-        f"3. Customers in the **0–6 month onboarding window** show {onboarding_rate:.1f}% "
+        f"3. Customers in the **0-6 month onboarding window** show {onboarding_rate:.1f}% "
         f"observed churn, versus {mature_rate:.1f}% for customers beyond 24 months.",
         f"4. **{payment_rates.index[0]}** has the highest observed churn rate among "
         f"payment methods ({payment_rates.iloc[0] * 100:.1f}%).",
-        "5. The estimated support-ticket measure is a service-configuration proxy, not "
+        "5. The estimated support-contact measure is a service-configuration proxy, not "
         "an observed ticket count; use it for segmentation hypotheses only.",
         "",
         "## Interpretation guardrails",
         "",
         "- The source is a cross-sectional customer snapshot. It does not establish "
         "causality, true acquisition cohorts, or month-over-month revenue trends.",
-        "- The synthetic cohort rows preserve the observed population mix for scalable "
-        "dashboard exploration, but they are not additional independent customers.",
-        "- `MonthlyCharges` and lifetime-value fields are revenue and value proxies, not "
+        "- Scenario descendants are retained for a clearly labeled dashboard prototype, "
+        "not used as independent evidence for the findings above.",
+        "- `MonthlyCharges` and remaining-value fields are revenue and value proxies, not "
         "audited financial statements.",
     ]
     return "\n".join(lines)
 
 
 def run_eda(data: pd.DataFrame | None = None) -> None:
-    """Generate figures and a Markdown summary from the latest pipeline output."""
-    analysis_data = data if data is not None else load_analysis_data()
+    """Generate observed-source figures and a Markdown summary from pipeline output."""
+    input_data = data if data is not None else load_analysis_data()
+    analysis_data, excluded_scenario_records = select_observed_records(input_data)
     generate_eda_figures(analysis_data)
     summary_path = resolve_path("reports/eda_summary.md")
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(generate_eda_summary(analysis_data), encoding="utf-8")
+    summary_path.write_text(
+        generate_eda_summary(analysis_data, excluded_scenario_records),
+        encoding="utf-8",
+    )
     logger.info("EDA summary written to %s", summary_path)

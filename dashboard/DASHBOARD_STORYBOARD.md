@@ -16,13 +16,13 @@ This is the implementation specification for the Tableau dashboard. It defines t
 - `predicted_churn_probability` = model-generated probability score.
 - `risk_band` = pipeline-generated risk category.
 - `support_ticket_proxy` = **estimated support-contact proxy**, not observed tickets, cases, or workload.
-- `MonthlyCharges` = MRR proxy; `lifetime_value_estimate` = estimated CLV.
+- `MonthlyCharges` = MRR proxy; `lifetime_value_estimate` = remaining-revenue proxy.
 
 ## Information architecture
 
 | Dashboard | Primary question | Primary outcome |
 |---|---|---|
-| 1. Executive Summary | Where is customer and revenue exposure concentrated? | A concise view of churn, MRR proxy, estimated CLV, and high-risk volume. |
+| 1. Executive Summary | Where is customer and revenue exposure concentrated? | A concise view of churn, MRR proxy, remaining-revenue proxy, and high-risk volume. |
 | 2. Churn Drivers & Segments | Which customer segments exhibit the highest observed churn and predicted risk? | Evidence for targeted retention hypotheses. |
 | 3. Retention Action Queue | Which accounts and segment plays should be reviewed first? | A filtered, prioritized account list with transparent scoring context. |
 
@@ -35,7 +35,7 @@ Place navigation buttons in the same position on all three pages. Use an executi
 | `KPI | Customers` | Executive | Text | — | `Customer Count` | Establishes filter-aware population. |
 | `KPI | Observed Churn` | Executive | Text | — | `Observed Churn Rate` | Historical outcome, not a model metric. |
 | `KPI | MRR Proxy` | Executive | Text | — | `Monthly Recurring Revenue (Proxy)` | Snapshot recurring-charge exposure. |
-| `KPI | CLV Estimate` | Executive | Text | — | `Average Lifetime Value (Estimate)` | Directional customer-value indicator. |
+| `KPI | Remaining-Revenue Proxy` | Executive | Text | — | `Average Remaining-Revenue Proxy (Estimate)` | Directional 72-month-horizon value estimate. |
 | `KPI | High-Risk Customers` | Executive | Text | — | `High-Risk Customer Count` | Threshold-driven prioritization volume. |
 | `Risk | Probability Distribution` | Executive | Histogram / bars | `Churn Probability Bin (5 pp)` | `Customer Count`; color `risk_band` | Makes score concentration visible without conflating it with actual churn. |
 | `Churn | Contract` | Executive, Drivers | Horizontal bars | `Contract` | `Observed Churn Rate`; label `Customer Count` | Shows contract-related observed churn. |
@@ -109,7 +109,7 @@ Refer to [CALCULATED_FIELDS.md](CALCULATED_FIELDS.md) for the exact calculation 
 | Observed churn by age group | Use horizontal bars with `AgeGroup` on Rows and `Observed Churn Rate` on Columns. | Age group, observed churn rate, customer count, average predicted risk. |
 | Observed churn by contract | Reuse the contract worksheet or create a detailed version with `InternetService` as a color or drill-down. | Contract, observed churn rate, customer count, MRR proxy. |
 | Payment × internet heatmap | Put `PaymentMethod` on Rows, `InternetService` on Columns, and `Observed Churn Rate` on Color; use `Customer Count` as label or tooltip. | State counts so sparse cells are not over-read. |
-| Engagement vs risk | Aggregate to sensible segments (for example `Contract` and `tenure_bucket`) rather than plotting 20,000 individual points. Plot `AVG(customer_engagement_score)` against `Average Predicted Churn Probability`; size marks by `Customer Count`. | Segment name, customers, average engagement, average risk, observed churn rate. |
+| Engagement vs risk | Aggregate to sensible segments (for example `Contract` and `tenure_bucket`) rather than plotting individual customer points. Plot `AVG(customer_engagement_score)` against `Average Predicted Churn Probability`; size marks by `Customer Count`. | Segment name, customers, average engagement, average risk, observed churn rate. |
 | Estimated support-contact proxy | Use `Support Ticket Proxy Band` on Rows and `Observed Churn Rate` on Columns. Do not describe the metric as actual ticket volume. | “Estimated support-contact proxy, not observed support cases,” plus count and observed churn rate. |
 
 Avoid causal wording. A segment with higher observed churn or predicted risk is an investigation and prioritization signal, not proof that the characteristic causes churn.
@@ -149,7 +149,7 @@ Avoid causal wording. A segment with higher observed churn or predicted risk is 
 
 ### Global filters
 
-Add `Contract`, `InternetService`, `PaymentMethod`, `AgeGroup`, `tenure_bucket`, and `risk_band` to all relevant worksheets using the same data source. Add `record_source` for provenance review; it can be hidden from the executive default view if all records are intentionally in scope.
+Add `Contract`, `InternetService`, `PaymentMethod`, `AgeGroup`, `tenure_bucket`, and `risk_band` to all relevant worksheets using the same data source. Add `record_source` as a visible provenance filter and set it to `observed` by default on executive and driver views. Keep scenario records in a separately labeled prototype view.
 
 ### Dashboard actions
 
@@ -165,7 +165,7 @@ Test action interaction with ordinary filters. An action should filter the inten
 
 ## Visual and content standards
 
-- Use `risk_band` colors consistently across all pages: Low (green), Medium (amber), High (orange), Critical (dark red).
+- Use `risk_band` colors consistently across all pages: Low (green), Medium (amber), High (orange).
 - Use a neutral sequential palette for heatmaps. Do not reuse risk colors for an unrelated metric.
 - Use direct labels for KPI cards and the most consequential bars; leave detailed values in tooltips where density would suffer.
 - Preserve a clear distinction between “observed,” “predicted,” “proxy,” and “estimate” in titles, subtitles, and tooltips.
@@ -176,7 +176,7 @@ Test action interaction with ordinary filters. An action should filter the inten
 
 The dashboard is ready to publish when all of the following are true:
 
-1. The Executive Summary shows overall observed churn, MRR proxy, estimated CLV, and high-risk customers, and each KPI responds correctly to global filters.
+1. The Executive Summary shows overall observed churn, MRR proxy, remaining-revenue proxy, and high-risk customers, and each KPI responds correctly to global filters.
 2. The Drivers page includes churn by age, churn by contract, a churn-probability distribution, and an explicitly disclosed `support_ticket_proxy` view.
 3. The Retention Action Queue is driven by `predicted_churn_probability` and `risk_band`, not only by feature-engineered rule scores.
 4. Every use of `support_ticket_proxy` says it is an estimated proxy, not an observed support-ticket count.

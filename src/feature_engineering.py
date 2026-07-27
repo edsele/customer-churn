@@ -35,8 +35,7 @@ FEATURE_DOCUMENTATION: dict[str, dict[str, str]] = {
     },
     "contract_risk_score": {
         "description": (
-            "Business-rule score for contract flexibility; 3 is month-to-month, "
-            "1 is two-year."
+            "Business-rule score for contract flexibility; 3 is month-to-month, 1 is two-year."
         ),
         "usage": "Dashboard only; raw Contract is modelled categorically",
     },
@@ -53,7 +52,7 @@ FEATURE_DOCUMENTATION: dict[str, dict[str, str]] = {
     },
     "lifetime_value_estimate": {
         "description": (
-            "Scenario value estimate: MonthlyCharges multiplied by months remaining "
+            "Remaining-revenue proxy: MonthlyCharges multiplied by months remaining "
             "to a 72-month horizon."
         ),
         "usage": "Dashboard only",
@@ -72,17 +71,16 @@ FEATURE_DOCUMENTATION: dict[str, dict[str, str]] = {
     },
     "support_ticket_proxy": {
         "description": (
-            "Estimated support need from service setup and tenure, not an observed "
-            "ticket count."
+            "Estimated support need from service setup and tenure, not an observed ticket count."
         ),
-        "usage": "Model and dashboard",
+        "usage": "Dashboard only",
     },
     "support_intensity": {
         "description": (
             "Estimated support need normalized by tenure, with new customers "
             "protected from division by zero."
         ),
-        "usage": "Model and dashboard",
+        "usage": "Dashboard only",
     },
 }
 
@@ -131,32 +129,26 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     enriched["tenure_bucket"] = enriched["tenure"].apply(create_tenure_bucket)
     tenure_denominator = enriched["tenure"].replace(0, np.nan)
     enriched["revenue_per_month"] = (
-        enriched["TotalCharges"] / tenure_denominator
-    ).fillna(enriched["MonthlyCharges"]).round(2)
+        (enriched["TotalCharges"] / tenure_denominator).fillna(enriched["MonthlyCharges"]).round(2)
+    )
     enriched["service_count"] = enriched.apply(_count_active_services, axis=1)
     enriched["avg_services_purchased"] = enriched["service_count"]
-    enriched["contract_risk_score"] = (
-        enriched["Contract"].map(CONTRACT_RISK).fillna(2).astype(int)
-    )
+    enriched["contract_risk_score"] = enriched["Contract"].map(CONTRACT_RISK).fillna(2).astype(int)
     enriched["customer_engagement_score"] = enriched.apply(_engagement_score, axis=1)
     median_charge = float(enriched["MonthlyCharges"].median())
-    enriched["monthly_charge_ratio"] = (
-        enriched["MonthlyCharges"] / max(median_charge, 1.0)
-    ).round(3)
+    enriched["monthly_charge_ratio"] = (enriched["MonthlyCharges"] / max(median_charge, 1.0)).round(
+        3
+    )
     enriched["lifetime_value_estimate"] = (
         enriched["MonthlyCharges"] * (72 - enriched["tenure"]).clip(lower=1, upper=72)
     ).round(2)
-    enriched["payment_risk_flag"] = (
-        enriched["PaymentMethod"] == "Electronic check"
-    ).astype(int)
+    enriched["payment_risk_flag"] = (enriched["PaymentMethod"] == "Electronic check").astype(int)
     enriched["senior_household_flag"] = (
         (enriched["SeniorCitizen"] == 1)
         & (enriched["Partner"] == "No")
         & (enriched["Dependents"] == "No")
     ).astype(int)
-    enriched["internet_fiber_flag"] = (
-        enriched["InternetService"] == "Fiber optic"
-    ).astype(int)
+    enriched["internet_fiber_flag"] = (enriched["InternetService"] == "Fiber optic").astype(int)
     enriched["support_ticket_proxy"] = enriched.apply(
         _estimate_support_ticket_proxy,
         axis=1,
@@ -184,7 +176,10 @@ def _engagement_score(row: pd.Series) -> float:
     tenure_component = min(float(row.get("tenure", 0)) / 72.0, 1.0) * 5
     contract_component = {"Two year": 2, "One year": 1}.get(row.get("Contract"), 0)
     return round(
-        services * 1.5 + security_adoption * 2 + backup_adoption + tenure_component
+        services * 1.5
+        + security_adoption * 2
+        + backup_adoption
+        + tenure_component
         + contract_component,
         2,
     )
@@ -220,8 +215,6 @@ def get_feature_columns() -> tuple[list[str], list[str]]:
         "customer_engagement_score",
         "payment_risk_flag",
         "senior_household_flag",
-        "support_ticket_proxy",
-        "support_intensity",
     ]
     categorical = [
         "gender",
@@ -282,9 +275,7 @@ def export_feature_documentation(output_path: Path | None = None) -> Path:
         "|---|---|---|",
     ]
     for name, metadata in FEATURE_DOCUMENTATION.items():
-        lines.append(
-            f"| `{name}` | {metadata['description']} | {metadata['usage']} |"
-        )
+        lines.append(f"| `{name}` | {metadata['description']} | {metadata['usage']} |")
     lines.extend(
         [
             "",
@@ -299,8 +290,8 @@ def export_feature_documentation(output_path: Path | None = None) -> Path:
             "",
             "The IBM source does not include support ticket counts. `support_ticket_proxy` "
             "is an estimated support-need indicator based on observable service setup and "
-            "tenure. It is not an observed operational metric and should be replaced with "
-            "actual CRM/support data in production.",
+            "tenure. It is dashboard-only, not an observed operational metric or model "
+            "input, and should be replaced with actual CRM/support data in production.",
         ]
     )
     path.write_text("\n".join(lines), encoding="utf-8")

@@ -1,9 +1,9 @@
 """Validated loading, cleaning, and scenario construction for customer churn data.
 
-The raw IBM Telco file contains 7,043 observed customer snapshots.  The optional
-analytics scenario expands those snapshots to 21,000 rows for dashboard and EDA
-demonstrations.  Scenario rows are explicitly labeled and are never treated as
-independent evidence in the default model evaluation.
+The raw IBM Telco file contains 7,043 observed customer snapshots. The optional
+analytics scenario expands those snapshots to 21,000 rows for dashboard and SQL
+prototypes. Scenario rows are explicitly labeled and are never treated as
+independent evidence in model evaluation or observed-source EDA.
 """
 
 from __future__ import annotations
@@ -40,6 +40,7 @@ class ValidationReport:
     observed_churn_rate: float | None = None
     scenario_churn_rate: float | None = None
     scenario_churn_rate_delta: float | None = None
+    scenario_distribution_checks: dict[str, float] = field(default_factory=dict)
 
     @property
     def row_count(self) -> int:
@@ -74,9 +75,7 @@ def validate_data(df: pd.DataFrame) -> ValidationReport:
     report = ValidationReport(input_rows=len(df))
 
     report.missing_columns = [
-        column
-        for column in validation_config["required_columns"]
-        if column not in df.columns
+        column for column in validation_config["required_columns"] if column not in df.columns
     ]
     if report.missing_columns:
         report.passed = False
@@ -112,6 +111,9 @@ def validate_data(df: pd.DataFrame) -> ValidationReport:
     if report.range_violations:
         report.passed = False
         report.messages.append("Numeric range violations detected.")
+    if report.coercion_failures:
+        report.passed = False
+        report.messages.append("Nonblank numeric values could not be parsed.")
     if report.invalid_churn_values:
         report.passed = False
         report.messages.append("Invalid churn labels detected.")
@@ -280,10 +282,10 @@ def _perturb_synthetic_profiles(
         200,
     ).round(2)
     synthetic["TotalCharges"] = (
-        synthetic["MonthlyCharges"]
-        * synthetic["tenure"]
-        * charge_ratio.to_numpy()
-    ).clip(lower=0, upper=10000).round(2)
+        (synthetic["MonthlyCharges"] * synthetic["tenure"] * charge_ratio.to_numpy())
+        .clip(lower=0, upper=10000)
+        .round(2)
+    )
     return synthetic
 
 
@@ -311,7 +313,27 @@ def assess_scenario_distribution(
             scenario["MonthlyCharges"].mean() - observed["MonthlyCharges"].mean()
         ),
     }
+    for column in ("Contract", "InternetService", "PaymentMethod"):
+        checks[f"{column}_max_distribution_delta"] = _max_distribution_delta(
+            observed[column],
+            scenario[column],
+        )
     return checks
+
+
+def _max_distribution_delta(
+    observed: pd.Series,
+    scenario: pd.Series,
+) -> float:
+    """Return the largest category-proportion difference between two cohorts."""
+    observed_distribution = observed.value_counts(normalize=True, dropna=False)
+    scenario_distribution = scenario.value_counts(normalize=True, dropna=False)
+    categories = observed_distribution.index.union(scenario_distribution.index)
+    delta = (
+        observed_distribution.reindex(categories, fill_value=0)
+        - scenario_distribution.reindex(categories, fill_value=0)
+    ).abs()
+    return float(delta.max())
 
 
 def export_cleaned_data(df: pd.DataFrame, output_path: Path | None = None) -> Path:
@@ -339,9 +361,7 @@ def write_validation_report(report: ValidationReport, path: Path | None = None) 
     config = load_config()
     output_path = path or resolve_path(config["paths"]["validation_report"])
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(report.to_dict(), indent=2, sort_keys=True), encoding="utf-8"
-    )
+    output_path.write_text(json.dumps(report.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
     logger.info("Wrote data quality report to %s", output_path)
     return output_path
 
@@ -351,7 +371,7 @@ def run_preprocessing_pipeline(
     export: bool = True,
     augment: bool | None = None,
 ) -> tuple[pd.DataFrame, ValidationReport]:
-    """Load, validate, clean, and optionally expand a dashboard/EDA scenario."""
+    """Load, validate, clean, and optionally expand a dashboard/SQL scenario."""
     config = load_config()
     raw = load_raw_data(raw_path)
     report = validate_data(raw)
@@ -360,17 +380,24 @@ def run_preprocessing_pipeline(
 
     cleaned = clean_data(raw)
     should_augment = config["augmentation"]["enabled"] if augment is None else augment
-    scenario = (
-        augment_dataset(cleaned)
-        if should_augment
-        else cleaned.copy().reset_index(drop=True)
-    )
+    scenario = augment_dataset(cleaned) if should_augment else cleaned.copy().reset_index(drop=True)
     distribution = assess_scenario_distribution(cleaned, scenario)
     report.output_rows = len(cleaned)
     report.scenario_rows = len(scenario)
     report.observed_churn_rate = distribution["observed_churn_rate"]
     report.scenario_churn_rate = distribution["scenario_churn_rate"]
     report.scenario_churn_rate_delta = distribution["churn_rate_delta"]
+    report.scenario_distribution_checks = distribution
+
+    augmentation_config = config["augmentation"]
+    if abs(report.scenario_churn_rate_delta) > augmentation_config["max_churn_rate_delta"]:
+        raise RuntimeError("Scenario churn prevalence exceeds the configured tolerance.")
+    category_tolerance = augmentation_config["max_categorical_distribution_delta"]
+    category_deltas = [
+        value for key, value in distribution.items() if key.endswith("_max_distribution_delta")
+    ]
+    if any(delta > category_tolerance for delta in category_deltas):
+        raise RuntimeError("Scenario categorical distribution exceeds the configured tolerance.")
 
     if export:
         export_cleaned_data(cleaned)

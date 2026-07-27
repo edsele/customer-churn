@@ -31,7 +31,7 @@ or learning work.
 | File | Grain | Purpose |
 |---|---|---|
 | `processed/customers_clean.csv` | 7,043 observed customers | Validated, deduplicated source snapshot. |
-| `processed/customers_analytics_scenario.csv` | 21,000 records | Explicitly labeled scenario for scalable EDA and dashboard design. |
+| `processed/customers_analytics_scenario.csv` | 21,000 records | Explicitly labeled scenario for dashboard and SQL prototyping. |
 | `processed/customers_features.csv` | 21,000 records | Scenario plus documented engineered features. |
 | `processed/customers_scored.csv` | 21,000 records | Scenario plus out-of-fold model risk scores. |
 | `exports/tableau_dashboard_data.csv` | 21,000 records | Tableau-ready scored export with presentation labels. |
@@ -39,7 +39,7 @@ or learning work.
 ## Analytics scenario policy
 
 The source dataset does not independently contain 20,000 customers. To support
-the project's large-record EDA and dashboard workflows, the pipeline creates
+large-record dashboard and SQL prototype workflows, the pipeline creates
 a 21,000-record **analytics scenario** by sampling within the observed churn
 classes and applying bounded, target-independent jitter to tenure and monthly
 charges. Each generated row is marked with:

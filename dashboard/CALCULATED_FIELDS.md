@@ -9,13 +9,20 @@ This reference uses the customer-level scored export described in [README.md](RE
 - `support_ticket_proxy` is an **estimated behavioral proxy**, not observed case-management data. Include that wording in every supporting tooltip or subtitle.
 - `risk_band` comes from the scoring pipeline and is the reporting dimension of record. The interactive threshold parameter below is only for prioritization; it should not silently rewrite the pipeline's banding.
 
+## Source scope
+
+Apply `record_source = "observed"` as the default filter to Executive Summary
+and Churn Drivers worksheets. This keeps historical KPIs and segment findings
+anchored to observed customers. If a separate scenario prototype is shown,
+leave `record_source` visible and label the view as a scenario.
+
 ## Parameter
 
 Create this parameter before the dependent fields.
 
 | Parameter | Data type | Allowable values | Current value | Purpose |
 |---|---|---|---|---|
-| `Risk Threshold` | Float | Range: 0.10–0.90, step 0.05 | 0.60 | Defines which scored customers appear in the high-risk KPI and retention queue. |
+| `Risk Threshold` | Float | Range: 0.10–0.90, step 0.05 | 0.50 | Defines which scored customers appear in the high-risk KPI and retention queue. |
 
 Format the parameter control as a percentage. The default should match the current model-operating threshold documented by the pipeline owner. If it is changed for a what-if view, retain an on-screen note that the change affects prioritization, not model performance.
 
@@ -63,13 +70,13 @@ SUM([MonthlyCharges])
 
 Format: currency, zero decimals. This represents the sum of customer monthly charges in the selected snapshot; it is not a general-ledger revenue total.
 
-### `Average Lifetime Value (Estimate)`
+### `Average Remaining-Revenue Proxy (Estimate)`
 
 ```tableau
 AVG([lifetime_value_estimate])
 ```
 
-Format: currency, zero decimals. The title must retain “Estimate” to avoid presenting a modeled feature as booked value.
+Format: currency, zero decimals. This is a 72-month-horizon remaining-revenue estimate, not a finance-approved customer lifetime value measure.
 
 ## Risk and revenue-at-risk fields
 
@@ -142,7 +149,6 @@ CASE UPPER([risk_band])
     WHEN "LOW" THEN 1
     WHEN "MEDIUM" THEN 2
     WHEN "HIGH" THEN 3
-    WHEN "CRITICAL" THEN 4
     ELSE 99
 END
 ```

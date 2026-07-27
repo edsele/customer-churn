@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import platform
+import subprocess
 import sys
+from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 from typing import Any
 
 from src.config import load_config, resolve_path, setup_logging
@@ -35,8 +41,9 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "project_version": config["project"]["version"],
         "observed_records": int(
-            (featured[config["data"]["record_source_column"]] == config["data"]["observed_label"])
-            .sum()
+            (
+                featured[config["data"]["record_source_column"]] == config["data"]["observed_label"]
+            ).sum()
         ),
         "analytics_scenario_records": len(featured),
         "validation_passed": validation.passed,
@@ -92,11 +99,77 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
 
 
 def _write_run_manifest(summary: dict[str, Any]) -> None:
-    """Persist a small machine-readable record of the current pipeline run."""
+    """Persist a traceable machine-readable record of the current pipeline run."""
     output_path = resolve_path("reports/run_manifest.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    payload = {**summary, "run_context": _build_run_context()}
+    output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     logger.info("Run manifest saved to %s", output_path)
+
+
+def _build_run_context() -> dict[str, Any]:
+    """Capture code, input, and environment details needed to reproduce a run."""
+    config = load_config()
+    raw_path = resolve_path(config["paths"]["raw_data"])
+    config_path = resolve_path("config/config.yaml")
+    return {
+        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "git_revision": _git_revision(),
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "raw_data_sha256": _sha256_file(raw_path),
+        "config_sha256": _sha256_file(config_path),
+        "package_versions": _package_versions(),
+    }
+
+
+def _sha256_file(path: Path) -> str | None:
+    """Return a file checksum when the input exists, otherwise ``None``."""
+    if not path.exists():
+        return None
+
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(65_536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _package_versions() -> dict[str, str | None]:
+    """Record versions for libraries that affect pipeline behavior or output."""
+    packages = [
+        "joblib",
+        "matplotlib",
+        "numpy",
+        "pandas",
+        "PyYAML",
+        "scikit-learn",
+        "seaborn",
+        "SQLAlchemy",
+    ]
+    versions: dict[str, str | None] = {}
+    for package in packages:
+        try:
+            versions[package] = version(package)
+        except PackageNotFoundError:
+            versions[package] = None
+    return versions
+
+
+def _git_revision() -> str | None:
+    """Return the checked-out revision without making Git availability a requirement."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=resolve_path("."),
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return result.stdout.strip() or None
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS customer_predictions (
 );
 
 -- These indexes support the customer-to-score join and common report filters.
-CREATE INDEX IF NOT EXISTS idx_customers_customer_id
+CREATE UNIQUE INDEX IF NOT EXISTS ux_customers_customer_id
     ON customers (customerID);
 CREATE INDEX IF NOT EXISTS idx_customers_contract_churn
     ON customers (Contract, Churn);

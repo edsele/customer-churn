@@ -5,81 +5,101 @@
 [![Style](https://img.shields.io/badge/style-ruff-261230)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-16A34A.svg)](LICENSE)
 
-An end-to-end analytics and machine-learning project for identifying telecom
-churn risk, understanding behavioral segments, and prioritizing retention
-opportunities. The project pairs a validated Python pipeline with a SQLite data
-mart, 14 analytical SQL queries, model diagnostics, and a Tableau-ready
-customer-level export.
+An end-to-end customer churn analytics project built around a validated Python
+pipeline, a SQLite analytics mart, reusable SQL analysis, and a Tableau-ready
+customer export. It is designed to answer two practical retention questions:
+which segments deserve investigation, and which accounts should be reviewed
+first for a retention intervention.
 
-> **Evidence first:** the IBM source contains 7,043 observed customers. This
-> repository also creates a clearly labeled 21,000-row analytics scenario for
-> scalable EDA and dashboard design. The model is trained and evaluated only on
-> the 7,043 observed source records—scenario rows are not treated as independent
-> evidence.
+| Capability | Current implementation |
+|---|---|
+| Data engineering | Validated raw ingestion, cleaning, feature documentation, lineage, and audit reports |
+| Analysis | Reproducible EDA figures and 14 reusable SQLite queries |
+| Machine learning | Three Scikit-Learn classifiers, training-only tuning, source-disjoint holdout, and out-of-fold scoring |
+| Decision support | Probability-weighted MRR exposure, high-risk worklist, and Tableau specifications |
 
 ![Executive dashboard preview](dashboard/screenshots/executive_summary_preview.png)
 
-*Portable executive-layout preview generated from the scored export. It is not
-represented as a Tableau screenshot or workbook; see [`dashboard/`](dashboard/)
-for the verified Tableau build specification and calculated fields.*
-
-## Business problem
-
-Customer churn erodes recurring revenue and raises acquisition costs. A
-retention team needs more than a historical churn rate: it needs a defensible
-way to identify segments worth investigating, rank accounts for human review,
-and measure whether an intervention actually changes outcomes.
-
-This project answers the following questions:
-
-1. Which customer, contract, service, and payment segments exhibit the highest
-   observed churn?
-2. Which snapshot attributes are most useful for ranking churn risk?
-3. Where is probability-weighted monthly revenue exposure concentrated?
-4. How can an executive dashboard distinguish observed outcomes from predicted
-   risk, estimates, and operational proxies?
+*The image is a Python-generated layout preview from the scored export. It is
+not represented as a Tableau workbook screenshot. The Tableau build materials
+are in [`dashboard/`](dashboard/).*
 
 ## Results at a glance
 
-The current reproducible run selected logistic regression by **training-only
-cross-validated ROC-AUC**. It was then evaluated once on a source-disjoint 20%
-holdout of the observed IBM customer records.
+The current reproducible run selected Gradient Boosting by training-only
+cross-validated ROC-AUC, then evaluated it once on an untouched 20% holdout of
+the observed source customers.
 
-| Metric | Holdout result |
+| Holdout metric | Result |
 |---|---:|
-| Accuracy | 81.97% |
-| Precision | 77.27% |
-| Recall | 51.26% |
-| F1 | 61.63% |
-| ROC-AUC | **86.54%** |
-| Average precision | 72.76% |
+| Accuracy | 82.26% |
+| Precision | 78.24% |
+| Recall | 51.51% |
+| F1 | 62.12% |
+| ROC-AUC | **86.92%** |
+| Average precision | 73.10% |
 
-Candidate comparison on training folds:
-
-| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
+| Candidate model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---:|---:|---:|---:|---:|
-| Logistic Regression | 80.62% | 66.97% | 50.58% | 57.62% | **84.51%** |
-| Random Forest | 76.89% | 54.19% | 73.79% | **62.45%** | 84.05% |
-| Gradient Boosting | 79.96% | 65.36% | 49.38% | 56.23% | 84.32% |
+| Logistic Regression | 80.32% | 66.21% | 50.06% | 57.01% | 84.34% |
+| Random Forest | 76.61% | 53.76% | **73.95%** | **62.22%** | 84.13% |
+| Gradient Boosting | 79.85% | 65.05% | 49.26% | 56.03% | **84.44%** |
 
-The model's **86.5% ROC-AUC** means it separates observed churners and
-non-churners well enough for risk ranking. Its 82.0% threshold accuracy is
-reported honestly; it is not inflated with scenario descendants or target-derived
-features. See the generated [model evaluation report](reports/model_evaluation.md)
-for the protocol, cross-validation results, confusion matrix, calibration curve,
-and feature importance.
+The model is intended for risk ranking and human-led review, not automatic
+retention decisions. Full results, calibration, confusion matrix, precision-
+recall curve, and holdout permutation importance are available in
+[`reports/model_evaluation.md`](reports/model_evaluation.md).
 
-### Key EDA findings
+## Business problem
 
-- Overall observed churn is **26.5%** in the 21,000-record analytics scenario,
-  which preserves the 7,043-record source prevalence.
-- Month-to-month customers show the highest observed churn (**42.7%**), followed
-  by fiber-optic customers (**41.8%**) and electronic-check payers (**45.2%**).
-- Customers in their first six months show **53.2%** observed churn versus
-  **14.0%** for customers beyond 24 months.
-- Tenure, contract type, and the documented estimated support-need proxy are
-  the strongest holdout permutation signals. They are prioritization signals,
-  not causal claims.
+Customer churn reduces recurring revenue and raises acquisition costs. A
+retention team needs more than a headline churn rate: it needs a consistent way
+to identify at-risk segments, estimate revenue exposure, and evaluate whether
+an intervention changes outcomes.
+
+This project answers:
+
+1. Which customer, contract, service, and payment segments exhibit the highest observed churn?
+2. Which snapshot attributes are most useful for ranking churn risk?
+3. Where is probability-weighted monthly revenue exposure concentrated?
+4. How should historical outcomes, model scores, and engineered proxies be distinguished in reporting?
+
+## Data scope and provenance
+
+The raw input is the IBM Telco Customer Churn sample: a cross-sectional snapshot
+of 7,043 customers with 21 columns and a historical `Churn` outcome.
+
+| Attribute | Detail |
+|---|---|
+| Source | [IBM Telco Customer Churn](https://github.com/IBM/telco-customer-churn-on-icp4d) |
+| Observed customers | 7,043 |
+| Target | `Churn` (`1` = churned, `0` = retained) |
+| Observed churn prevalence | 26.54% |
+| Raw file checksum | SHA-256 `88BE4B93FBE0CC83421AF1C503794C97C342ECA914C1576DB7C276E61D61358A` |
+| Optional analytics scenario | 21,000 rows: 7,043 observed plus 13,957 lineage-labeled scenario descendants |
+
+The source does not independently contain 20,000 customers. The optional
+scenario is clearly marked with `record_source` and `source_customer_id`, and
+is used for dashboard and SQL prototyping only. It is excluded from model
+training, model evaluation, executive KPIs, and observed-source EDA findings.
+Read the [data card](data/README.md) for terms, handling, and limitations.
+
+## Key EDA findings
+
+The following findings use only the 7,043 observed source records:
+
+- Overall observed churn is **26.5%**.
+- Month-to-month customers have the highest observed churn (**42.7%**).
+- Fiber-optic customers show **41.9%** observed churn, and electronic-check
+  customers show **45.3%**.
+- Customers in their first six months show **52.9%** observed churn, compared
+  with **14.0%** for customers beyond 24 months.
+- Holdout permutation importance is led by tenure, contract type, and internet
+  service. These are prioritization signals, not causal claims.
+
+The generated summary and figures are available in
+[`reports/eda_summary.md`](reports/eda_summary.md) and
+[`reports/figures/`](reports/figures/).
 
 ## Architecture
 
@@ -87,276 +107,215 @@ and feature importance.
 IBM Telco customer snapshot (7,043 observed records)
                          |
                          v
-       schema validation + cleaning + audit JSON
+             schema validation and cleaning
                          |
-          +--------------+---------------------+
-          |                                    |
-          v                                    v
-observed cleaned data                  21,000-row analytics scenario
-          |                             (lineage-labeled; EDA/dashboard)
-          +--------------------+---------------+
-                               |
-                               v
-                documented feature engineering
-                               |
-          +--------------------+---------------------+
-          |                                          |
-          v                                          v
-  observed-only CV / holdout                  EDA + SQLite data mart
-          |                                          |
-          v                                          v
-  trained model + diagnostics        scored Tableau export + SQL reporting
-          |
-          v
-out-of-fold probabilities for every scenario record
-```
-
-## Dataset and provenance
-
-The raw input is the IBM Telco Customer Churn sample: 7,043 customer snapshots,
-21 columns, and a `Churn` outcome. The source has no dates, event history,
-actual age, or actual support-ticket counts.
-
-| Attribute | Detail |
-|---|---|
-| Source | [IBM Telco Customer Churn](https://github.com/IBM/telco-customer-churn-on-icp4d) |
-| Observed customers | 7,043 |
-| Analytics scenario | 21,000 rows: 7,043 observed + 13,957 labeled synthetic cohort records |
-| Target | `Churn` (`1` = churned, `0` = retained) |
-| Source prevalence | 26.54% churn |
-| Raw file checksum | SHA-256 `88BE4B93FBE0CC83421AF1C503794C97C342ECA914C1576DB7C276E61D61358A` |
-
-Read the [data card](data/README.md) for data handling, source terms, scenario
-policy, lineage fields, and limitations.
-
-### Why an analytics scenario exists
-
-The project needs a 20,000+ record analytics surface without falsely claiming
-that 20,000 independent customers were observed. The scenario samples within
-the observed churn classes, applies small bounded perturbations to tenure and
-monthly charges, maintains source-compatible charge logic, and carries both
-`record_source` and `source_customer_id`. The default model excludes those
-derived rows from training and evaluation.
-
-## Project structure
-
-```text
-customer-churn/
-├── config/
-│   └── config.yaml                 # paths, validation, augmentation, modeling settings
-├── data/
-│   ├── README.md                   # provenance and data-use notes
-│   ├── raw/                        # checked-in IBM source CSV
-│   ├── processed/                  # generated clean, feature, score, and SQLite artifacts
-│   └── exports/                    # generated Tableau-ready CSV
-├── dashboard/
-│   ├── README.md                   # Tableau build and QA guide
-│   ├── CALCULATED_FIELDS.md        # exact Tableau calculations
-│   ├── DASHBOARD_STORYBOARD.md     # three-page dashboard specification
-│   └── screenshots/                # portable preview / verified workbook captures
-├── models/                         # generated fitted pipelines and metrics JSON
-├── notebooks/                      # optional interactive EDA companion
-├── reports/
-│   ├── figures/                    # EDA and evaluation plots
-│   ├── data_quality_report.json
-│   ├── eda_summary.md
-│   ├── feature_engineering.md
-│   ├── model_evaluation.md
-│   └── run_manifest.json
-├── sql/                             # SQLite views and 14 reusable analytical queries
-├── src/                             # production pipeline modules
-├── tests/                           # unit and integration tests
-├── run_pipeline.py                  # pipeline CLI
-├── run_sql.py                       # SQL query runner
-├── requirements.txt
-└── pyproject.toml
+          +--------------+----------------------+
+          |                                     |
+          v                                     v
+observed clean data                 lineage-labeled 21K scenario
+          |                          (SQL and dashboard prototype)
+          |                                     |
+          +---------------+---------------------+
+                          |
+                          v
+            documented feature engineering
+                          |
+          +---------------+---------------------+
+          |                                     |
+          v                                     v
+observed-only train/CV/holdout          SQLite mart and Tableau export
+          |                                     |
+          v                                     v
+model diagnostics and OOF scores      observed-source EDA and preview
 ```
 
 ## Quick start
 
-### 1. Install
+### 1. Create an environment
 
 ```bash
-git clone https://github.com/<your-username>/customer-churn-analytics.git
-cd customer-churn-analytics
-
+cd customer-churn
 python -m venv .venv
+
 # macOS / Linux
 source .venv/bin/activate
+
 # Windows PowerShell
 # .venv\Scripts\Activate.ps1
 
 python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-### 2. Build the full project
+For the direct dependency versions used to verify this repository, install
+[`requirements.lock`](requirements.lock) instead of `requirements.txt`.
+
+### 2. Build all artifacts
 
 ```bash
 python run_pipeline.py
 ```
 
-This single command:
+The pipeline:
 
-1. loads and validates the raw file;
-2. cleans missing values and duplicate IDs;
-3. creates the lineage-labeled 21,000-row analytics scenario;
-4. engineers documented features and exports a data-quality audit;
-5. tunes Logistic Regression, Random Forest, and Gradient Boosting on observed
-   training folds only;
-6. evaluates the selected model once on the held-out observed customers;
-7. creates out-of-fold probabilities for dashboard records;
-8. writes the SQLite mart, Tableau export, EDA figures, diagnostics, and preview.
+1. loads, validates, and cleans the raw customer snapshot;
+2. creates the lineage-labeled scenario and data-quality audit;
+3. engineers documented customer features;
+4. tunes Logistic Regression, Random Forest, and Gradient Boosting on observed training folds only;
+5. evaluates the selected model once on the untouched observed holdout;
+6. creates out-of-fold probabilities for each source profile and its scenario descendants;
+7. writes the SQLite mart, SQL-ready views, Tableau export, figures, reports, and portable preview.
 
-For a data-only run:
+For a fast pipeline smoke run without fitting models:
 
 ```bash
 python run_pipeline.py --skip-training
 ```
 
-### 3. Run checks
+### 3. Verify quality checks
 
 ```bash
-python -m pytest -q
 python -m ruff check .
+python -m pytest -q
+python run_sql.py
 ```
 
-## Data pipeline
+## Project structure
 
-The pipeline is deliberately modular and testable.
+```text
+customer-churn/
+|-- config/                 # paths, data validation, augmentation, and model settings
+|-- data/
+|   |-- raw/                # IBM source CSV
+|   |-- processed/          # generated clean, feature, score, and SQLite artifacts
+|   `-- exports/            # generated Tableau-ready customer export
+|-- dashboard/              # Tableau build guide, calculations, storyboard, preview
+|-- docs/                   # technical and reporting notes
+|-- models/                 # generated fitted pipelines
+|-- reports/                # EDA, evaluation, quality, and run-manifest evidence
+|-- sql/                    # mart DDL plus 14 reusable analytics queries
+|-- src/                    # modular pipeline code
+|-- tests/                  # unit and integration tests
+|-- run_pipeline.py         # full pipeline CLI
+|-- run_sql.py              # SQL query runner
+|-- requirements.txt        # supported dependency ranges
+|-- requirements.lock       # direct pins used for the verified environment
+`-- pyproject.toml          # package metadata and tool configuration
+```
+
+## Pipeline design
 
 | Module | Responsibility |
 |---|---|
-| `src/preprocessing.py` | Raw loading, schema/range checks, de-duplication, numeric coercion, cleaning, scenario lineage, and audit JSON. |
-| `src/feature_engineering.py` | Snapshot-safe feature creation, feature documentation, and fold-safe preprocessing. |
-| `src/modeling.py` | Source-disjoint observed holdout, `GridSearchCV` / `RandomizedSearchCV`, model persistence, and out-of-fold scoring. |
-| `src/evaluation.py` | Classification metrics, CV summaries, ROC/PR/calibration curves, confusion matrix, and holdout permutation importance. |
-| `src/database.py` | SQLite customer and prediction tables, analytical views, and Tableau export. |
-| `src/eda.py` | Repeatable visual EDA and values-driven summary. |
-| `src/dashboard_preview.py` | Portable executive layout preview from the scored data contract. |
+| [`src/preprocessing.py`](src/preprocessing.py) | Schema, range, type, target-label, duplicate-ID, and scenario-distribution validation; cleaning and lineage. |
+| [`src/feature_engineering.py`](src/feature_engineering.py) | Documented feature creation and fold-safe categorical/numeric preprocessing. |
+| [`src/modeling.py`](src/modeling.py) | Source-disjoint split, tuning, model selection, persistence, and out-of-fold dashboard scoring. |
+| [`src/evaluation.py`](src/evaluation.py) | Classification metrics, ROC/PR/calibration plots, confusion matrix, and holdout permutation importance. |
+| [`src/database.py`](src/database.py) | SQLite customer and prediction tables, integrity constraints, reporting views, and Tableau export. |
+| [`src/eda.py`](src/eda.py) | Repeatable observed-source EDA figures and values-driven summary. |
+| [`src/dashboard_preview.py`](src/dashboard_preview.py) | Portable executive preview using observed source records by default. |
 
-The current data-quality audit is available at
-[`reports/data_quality_report.json`](reports/data_quality_report.json). It
-records 7,043 inputs, zero duplicate IDs, zero invalid churn labels, and a
-scenario churn-rate delta of roughly 0.001 percentage points.
+Each run writes [`reports/run_manifest.json`](reports/run_manifest.json) with
+the raw-data checksum, configuration checksum, Python and package versions, and
+the Git revision available at execution time.
 
 ## Feature engineering
 
-| Feature | Purpose |
-|---|---|
-| `tenure_bucket` | Groups lifecycle into onboarding, growth, mature, and loyal stages. |
-| `revenue_per_month` | Realized charge rate; uses monthly charges for zero-tenure records. |
-| `service_count` / `avg_services_purchased` | Counts active service subscriptions. |
-| `contract_risk_score` | Business-facing contract-flexibility indicator for reporting. |
-| `customer_engagement_score` | Explainable service, tenure, security, and contract composite. |
-| `payment_risk_flag` | Electronic-check indicator. |
-| `support_ticket_proxy` | Estimated support need from observable service setup and tenure—not actual ticket data. |
-| `support_intensity` | Support proxy normalized by tenure. |
-| `lifetime_value_estimate` | Directional 72-month-horizon value estimate for reporting. |
+| Feature | Purpose | Model input? |
+|---|---|---|
+| `tenure_bucket` | Groups customers into onboarding, growth, mature, and loyal stages. | Yes |
+| `revenue_per_month` | Uses realized charges per tenure month; defaults to monthly charge for new customers. | Yes |
+| `service_count` | Counts active service subscriptions. | Yes |
+| `customer_engagement_score` | Explainable service, security, tenure, and contract composite. | Yes |
+| `payment_risk_flag` | Electronic-check indicator. | Yes |
+| `contract_risk_score` | Reporting-only contract flexibility indicator. | No |
+| `lifetime_value_estimate` | 72-month-horizon remaining-revenue proxy. | No |
+| `support_ticket_proxy` | Estimated support-contact proxy; not an observed ticket count. | No |
 
-The full definitions, intended use, and model boundary are in
-[`reports/feature_engineering.md`](reports/feature_engineering.md). Features
-that duplicate raw categories or depend on a scenario-wide statistic are kept
-for business reporting but excluded from the model input.
+The full feature contract and intended-use boundary are generated in
+[`reports/feature_engineering.md`](reports/feature_engineering.md). The support
+proxy is intentionally dashboard-only and should be replaced by real CRM or
+support data in a production system.
 
 ## Machine learning methodology
 
-### Validation design
-
-- **Population:** the original observed IBM records only.
+- **Population:** only the 7,043 observed IBM customer snapshots.
 - **Holdout:** deterministic 20% stratified, source-disjoint partition.
-- **Tuning:** 5-fold `StratifiedGroupKFold` on training records only, optimizing
-  ROC-AUC.
-- **Models:** Logistic Regression, Random Forest, and Gradient Boosting;
-  XGBoost is supported as an optional configuration choice.
-- **Preprocessing:** `ColumnTransformer` pipeline with training-fold median /
-  most-frequent imputation, standard scaling, and one-hot encoding.
-- **Final evaluation:** exactly one evaluation of the selected model on the
-  untouched holdout. Candidate comparison in the report is training-CV only.
-- **Dashboard scores:** five-fold out-of-fold probabilities so a source profile
-  is scored by a model that did not train on that source.
+- **Tuning:** five-fold `StratifiedGroupKFold` on training records only, with
+  ROC-AUC as the selection metric.
+- **Preprocessing:** a Scikit-Learn `ColumnTransformer` inside each candidate
+  pipeline with median/most-frequent imputation, standard scaling, and one-hot
+  encoding.
+- **Models:** Logistic Regression, Random Forest, and Gradient Boosting.
+- **Final evaluation:** a single evaluation on the untouched observed holdout.
+- **Dashboard scoring:** five-fold out-of-fold probabilities so a source record
+  is scored by a model that did not train on it.
 
-### Evaluation artifacts
-
-| Artifact | What it shows |
-|---|---|
-| `reports/figures/roc_curve.png` | Ranking discrimination across thresholds. |
-| `reports/figures/precision_recall_curve.png` | Positive-class performance under churn imbalance. |
-| `reports/figures/confusion_matrix.png` | Classification outcomes at the documented 0.50 threshold. |
-| `reports/figures/calibration_curve.png` | Alignment of predicted probability and observed rate. |
-| `reports/figures/feature_importance.png` | Holdout permutation importance, measured as ROC-AUC decrease. |
-| `reports/feature_importance.csv` | Exportable numeric feature-importance table. |
+The configured high-risk threshold is 0.50, matching the evaluation report.
+In a real retention workflow, threshold selection should reflect contact
+capacity, intervention cost, and measured campaign uplift.
 
 ## SQL analytics
 
-The SQLite mart contains two tables:
+The SQLite mart has two base tables:
 
-- `customers`: feature-engineered customer snapshot;
-- `customer_predictions`: model name/version, out-of-fold churn probability,
-  risk band, threshold, scoring source, and probability-weighted MRR exposure.
+- `customers`: feature-engineered customer snapshot with unique `customerID`;
+- `customer_predictions`: constrained one-row-per-customer score contract.
 
-`sql/00_create_views.sql` creates a canonical reporting view plus segment,
-high-risk worklist, and retention-snapshot views. The remaining 14 scripts
-cover churn segments, contract revenue, lifetime/tenure, high-risk groups, MRR
-exposure, retention snapshots, payment methods, senior-status demographics,
-support-proxy segments, value segments, risk worklists, score distribution,
-scoring coverage, and executive KPIs.
+`sql/00_create_views.sql` creates the canonical customer analytics view,
+customer segments, high-risk worklist, and a cross-sectional retention snapshot.
+The remaining 14 query files cover churn by segment, contract revenue, tenure,
+high-risk groups, MRR exposure, payment methods, demographics, support-proxy
+segments, value segments, scoring coverage, and executive KPIs.
 
 ```bash
-# Run all reporting queries after the pipeline
+# Run every analytical query after the pipeline completes
 python run_sql.py
 
 # Run one query
 python run_sql.py --query 04_high_risk_customer_groups.sql
 ```
 
-The source is a snapshot, so “retention” is a retained-share proxy by tenure
-segment and “monthly revenue analysis” refers to snapshot MRR exposure—not a
-fabricated time series.
+Queries preserve `record_source` so scenario rows cannot be confused with
+observed source customers. The runner returns a non-zero exit code if any query
+fails.
 
-## Tableau dashboard
+## Tableau handoff
 
-The Tableau-ready export is generated at
-`data/exports/tableau_dashboard_data.csv`. It includes `Churn` and
-`ChurnLabel` for observed outcomes, `predicted_churn_probability` and
-`risk_band` for model scores, revenue-at-risk estimates, customer lifecycle,
-and lineage fields.
+The pipeline exports `data/exports/tableau_dashboard_data.csv` with observed
+outcomes, out-of-fold probabilities, risk bands, revenue-at-risk estimates,
+customer lifecycle fields, and source lineage.
 
-The dashboard specification defines three pages:
-
-1. **Executive Summary** — observed churn, MRR proxy, estimated CLV, high-risk
-   customers, probability distribution, and revenue-at-risk exposure.
-2. **Churn Drivers & Segments** — senior status, contract, payment/service,
-   lifecycle, engagement, and explicitly disclosed support-proxy views.
-3. **Retention Action Queue** — filterable human-review worklist ranked by
-   probability-weighted monthly revenue exposure.
-
-Use these companion documents to build and verify the interactive Tableau
-workbook:
+The repository includes a professional build package:
 
 - [Tableau build guide](dashboard/README.md)
 - [Calculated fields](dashboard/CALCULATED_FIELDS.md)
 - [Dashboard storyboard](dashboard/DASHBOARD_STORYBOARD.md)
 
-Every view must distinguish **observed**, **predicted**, **estimated**, and
-**proxy** measures. Interactive global filters cover contract, internet service,
-payment method, senior status, lifecycle stage, risk band, and source lineage.
+It specifies an Executive Summary, Churn Drivers and Segments, and a Retention
+Action Queue with filters for contract, service, payment method, age group,
+tenure, risk band, and source provenance. Executive and driver views use
+`record_source = observed` by default. The scenario may be used in a separately
+labeled prototype view.
+
+No `.twb` or `.twbx` workbook is checked in. Build and verify the interactive
+workbook in Tableau Desktop or Tableau Public before claiming a published
+Tableau dashboard; then add exported workbook screenshots and a public link to
+this section.
 
 
-## Limitations and future work
+## Limitations and next steps
 
-- Replace the scenario data with a larger, independently observed labeled source
+- Replace the scenario with a larger independently observed labeled source
   before making claims about 20,000 real customers.
-- Integrate actual CRM, support, and billing-event data; retire the support proxy.
-- Add temporal validation once churn events and observation dates are available.
-- Calibrate thresholds against intervention cost, contact capacity, and measured
-  campaign uplift instead of a generic 0.60 high-risk cutoff.
-- Add drift monitoring, data contracts, and scheduled orchestration for a
-  production deployment.
-- Use treatment-effect or uplift modeling after collecting randomized retention
-  campaign outcomes.
+- Add actual CRM, support, billing-event, and campaign-response data.
+- Introduce temporal validation after obtaining churn-event dates.
+- Calibrate the operating threshold with intervention cost, capacity, and uplift.
+- Add data contracts, drift monitoring, scheduled orchestration, and access
+  controls for a production deployment.
+- Use treatment-effect modeling after collecting randomized retention outcomes.
 
 ## License
 
 Project code is available under the [MIT License](LICENSE). Dataset use remains
-subject to the original source terms described in the [data card](data/README.md).
+subject to the source publisher's terms described in the [data card](data/README.md).

@@ -37,16 +37,24 @@ Use a Tableau extract for the published dashboard. The data is a customer-level 
 | `Churn` | Measure / whole number | Observed churn rate | Binary historical label: `1` = churned, `0` = retained. |
 | `ChurnLabel` | Dimension / string | Readable observed-churn labels | `Yes` / `No`; use only for presentation. |
 | `predicted_churn_probability` | Measure / decimal | Risk distribution, prioritization, revenue at risk | Expected range is 0 to 1; format as a percentage. |
-| `risk_band` | Dimension / string | Risk segmentation and filtering | Pipeline-generated categorical band. Standard values are `Low`, `Medium`, `High`, and optionally `Critical`. |
+| `risk_band` | Dimension / string | Risk segmentation and filtering | Pipeline-generated categorical band. Standard values are `Low`, `Medium`, and `High`. |
 | `support_ticket_proxy` | Measure / whole number | Behavioral-support analysis | **Estimated proxy only**. It is not a count of observed support cases or tickets. |
 | `MonthlyCharges` | Measure / decimal | MRR and revenue-at-risk proxies | Format as currency. |
-| `lifetime_value_estimate` | Measure / decimal | Estimated customer lifetime value | A modeled feature, not a finance-approved CLV measure. |
+| `lifetime_value_estimate` | Measure / decimal | Remaining-revenue proxy | A 72-month-horizon estimate, not a finance-approved CLV measure. |
 | `Contract`, `InternetService`, `PaymentMethod` | Dimensions | Segmentation and global filters | Core operational slices. |
 | `tenure`, `tenure_bucket`, `AgeGroup` | Measures / dimensions | Lifecycle and demographic analysis | `AgeGroup` is derived from the senior-citizen indicator. |
 | `customer_engagement_score`, `avg_services_purchased` | Measures | Behavioral-driver views | Engineered explanatory features. |
 | `record_source` | Dimension | Provenance filter / tooltip | Keep visible when comparing original and augmented scenario records. |
 
 If the three scoring fields—`predicted_churn_probability`, `risk_band`, and `support_ticket_proxy`—are absent, refresh the pipeline output before building. Do not substitute `contract_risk_score` for model probability; it is an engineered rule-based feature, not the scored model output.
+
+### Source scope
+
+Set `record_source` to `observed` by default on the Executive Summary and Churn
+Drivers dashboards. This keeps executive KPIs and historical segment findings
+anchored to the 7,043 observed source customers. The lineage-labeled scenario
+can be explored in a separate prototype view, but it must retain the visible
+`record_source` filter and must not be presented as additional observed evidence.
 
 ## Build workflow
 
@@ -69,6 +77,7 @@ Build a small hidden QA worksheet before layout work. It should confirm:
 | Probability range | `MIN([predicted_churn_probability]) >= 0` and `MAX([predicted_churn_probability]) <= 1`. |
 | Scoring completeness | No null probability or `risk_band` values in records intended for risk reporting. |
 | Risk bands | Every `risk_band` value is documented and has a valid sort order. |
+| Source default | Executive worksheets begin with `record_source = observed`; scenario views disclose their source. |
 | Support measure disclosure | Every sheet using `support_ticket_proxy` labels it “Estimated support-contact proxy.” |
 | Filter behavior | KPI cards, charts, and the action queue react to the same global segment filters. |
 
@@ -79,7 +88,7 @@ Do not display a churn-rate KPI for a cohort that has no observed churn outcome.
 | Folder | Contents |
 |---|---|
 | `00 Parameters` | `Risk Threshold` parameter and optional display settings. |
-| `01 KPI` | Customer count, observed churn rate, MRR proxy, estimated CLV, and high-risk count. |
+| `01 KPI` | Customer count, observed churn rate, MRR proxy, remaining-revenue proxy, and high-risk count. |
 | `02 Executive` | Contract, tenure, and probability-distribution worksheets. |
 | `03 Drivers` | Charges, engagement, service, payment, and support-proxy views. |
 | `04 Retention Queue` | Prioritized customer-detail table and revenue-at-risk view. |
@@ -97,7 +106,7 @@ Show these filters in a compact horizontal row on every dashboard:
 - `AgeGroup`
 - `tenure_bucket`
 - `risk_band`
-- `record_source` when source provenance needs to be reviewed
+- `record_source` with `observed` as the documented executive default
 
 Set the filters to **All using this data source** for the KPI, chart, and action-queue sheets. Add a reset button that returns every filter and the risk threshold to their default state. Contract, tenure, and risk-band marks should also support click-to-filter actions, with a visible “Clear selection” instruction.
 
@@ -105,7 +114,7 @@ Set the filters to **All using this data source** for the KPI, chart, and action
 
 - Use a 16:9 desktop canvas (recommended: 1,440 × 900 px) and keep KPI cards above the fold.
 - Format probabilities and observed churn rates to one decimal place; format currency without unnecessary decimals; show counts with thousands separators.
-- Reserve red for observed churn / critical risk and avoid using color as the only status signal. Suggested risk colors: Low `#15803D`, Medium `#CA8A04`, High `#EA580C`, Critical `#B91C1C`.
+- Reserve red for observed churn and avoid using color as the only status signal. Suggested risk colors: Low `#15803D`, Medium `#CA8A04`, High `#EA580C`.
 - Use a neutral blue such as `#2563EB` for context and an off-white background such as `#F8FAFC`. Retained customers may use muted teal `#0F766E`.
 - Add concise subtitles and tooltips that state whether a metric is observed, predicted, estimated, or a proxy.
 - Use an accessible sans-serif font, readable axis labels, and direct labels on the most important bars. Avoid red/green-only comparisons.

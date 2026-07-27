@@ -65,6 +65,21 @@ def test_validate_raw_data_passes() -> None:
     assert report.passed
     assert report.invalid_churn_values == 0
     assert report.range_violations == {}
+    assert report.coercion_failures == {}
+
+
+def test_validate_rejects_nonblank_numeric_coercion_failures(
+    sample_raw_df: pd.DataFrame,
+) -> None:
+    malformed = sample_raw_df.copy()
+    malformed["MonthlyCharges"] = malformed["MonthlyCharges"].astype(object)
+    malformed.loc[1, "MonthlyCharges"] = "not-a-number"
+
+    report = validate_data(malformed)
+
+    assert not report.passed
+    assert report.coercion_failures == {"MonthlyCharges": 1}
+    assert "Nonblank numeric values could not be parsed." in report.messages
 
 
 def test_clean_data_handles_blank_total_charges(sample_raw_df: pd.DataFrame) -> None:
@@ -101,6 +116,9 @@ def test_scenario_distribution_report_is_transparent(sample_raw_df: pd.DataFrame
     checks = assess_scenario_distribution(observed, scenario)
     assert abs(checks["churn_rate_delta"]) < 0.02
     assert "monthly_charge_mean_delta" in checks
+    assert "Contract_max_distribution_delta" in checks
+    assert "InternetService_max_distribution_delta" in checks
+    assert "PaymentMethod_max_distribution_delta" in checks
 
 
 def test_support_proxy_is_not_target_derived(sample_raw_df: pd.DataFrame) -> None:
@@ -142,3 +160,5 @@ def test_engineered_features_and_model_columns(sample_raw_df: pd.DataFrame) -> N
     }
     assert expected_columns.issubset(featured.columns)
     assert set(numeric + categorical).issubset(featured.columns)
+    assert "support_ticket_proxy" not in numeric + categorical
+    assert "support_intensity" not in numeric + categorical
