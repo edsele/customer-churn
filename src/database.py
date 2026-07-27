@@ -1,4 +1,4 @@
-"""SQLite data-mart operations for churn analysis and Tableau exports."""
+"""SQLite data-mart operations for churn analysis and BI dashboard exports."""
 
 from __future__ import annotations
 
@@ -147,6 +147,48 @@ def export_tableau_dataset(
     config = load_config()
     path = output_path or resolve_path(config["paths"]["tableau_export"])
     path.parent.mkdir(parents=True, exist_ok=True)
+    export = _prepare_dashboard_export(scored_customers)
+    export.to_csv(path, index=False)
+    logger.info("Exported Tableau dataset with %d rows to %s", len(export), path)
+    return path
+
+
+def export_powerbi_dataset(
+    scored_customers: pd.DataFrame,
+    output_path: Path | None = None,
+) -> Path:
+    """Export an observed-only, scored customer snapshot for the Power BI report.
+
+    The project also produces a 21,000-row lineage-labeled analytics scenario for
+    prototyping. Power BI executive KPIs must instead remain anchored to the
+    independently observed IBM Telco records, so this export filters the source
+    before it is made available to the report.
+    """
+    config = load_config()
+    path = output_path or resolve_path(config["paths"]["powerbi_export"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    export = _prepare_dashboard_export(scored_customers)
+
+    source_column = config["data"]["record_source_column"]
+    observed_label = config["data"]["observed_label"]
+    if source_column not in export.columns:
+        raise ValueError(f"Power BI export requires the '{source_column}' lineage column.")
+
+    observed_export = export.loc[export[source_column] == observed_label].copy()
+    if observed_export.empty:
+        raise ValueError("Power BI export contains no observed customer records.")
+
+    observed_export.to_csv(path, index=False)
+    logger.info(
+        "Exported Power BI dataset with %d observed rows to %s",
+        len(observed_export),
+        path,
+    )
+    return path
+
+
+def _prepare_dashboard_export(scored_customers: pd.DataFrame) -> pd.DataFrame:
+    """Add common presentation and exposure fields to a scored customer snapshot."""
     export = scored_customers.copy()
 
     if "Churn" in export.columns:
@@ -170,6 +212,10 @@ def export_tableau_dataset(
         "revenue_at_risk",
         export["MonthlyCharges"] * export["predicted_churn_probability"],
     )
-    export.to_csv(path, index=False)
-    logger.info("Exported Tableau dataset with %d rows to %s", len(export), path)
-    return path
+    export["high_risk_mrr_proxy"] = export["MonthlyCharges"] * export["HighRiskFlag"]
+    export["retention_priority_value"] = export["revenue_at_risk"]
+    export["risk_band_order"] = export.get(
+        "risk_band",
+        pd.Series("Unknown", index=export.index),
+    ).map({"Low": 1, "Medium": 2, "High": 3}).fillna(4).astype(int)
+    return export

@@ -42,6 +42,10 @@ dashboard/screenshots/*
 !dashboard/screenshots/.gitkeep
 !dashboard/screenshots/*.png
 
+# Power BI report source (embedded in the tracked PBIX; regenerate to refresh)
+dashboard/powerbi/data/*
+!dashboard/powerbi/data/.gitkeep
+
 # OS
 .DS_Store
 Thumbs.db

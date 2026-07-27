@@ -8,6 +8,7 @@ import pandas as pd
 
 from src.database import (
     execute_query,
+    export_powerbi_dataset,
     export_tableau_dataset,
     initialize_database,
     run_sql_script,
@@ -74,3 +75,20 @@ def test_tableau_export_contains_documented_scoring_fields(tmp_path: Path) -> No
     }
     assert required_columns.issubset(exported.columns)
     assert exported["predicted_churn_probability"].between(0, 1).all()
+
+
+def test_powerbi_export_is_observed_only_and_contains_exposure_fields(tmp_path: Path) -> None:
+    output_path = tmp_path / "powerbi_export.csv"
+    data = _scored_fixture()
+    scenario_copy = data.iloc[[0]].copy()
+    scenario_copy["customerID"] = "SCENARIO-0001"
+    scenario_copy["record_source"] = "synthetic_cohort"
+    export_powerbi_dataset(pd.concat([data, scenario_copy], ignore_index=True), output_path)
+
+    exported = pd.read_csv(output_path)
+    assert len(exported) == len(data)
+    assert set(exported["record_source"]) == {"observed"}
+    assert {"high_risk_mrr_proxy", "retention_priority_value", "risk_band_order"}.issubset(
+        exported.columns
+    )
+    assert (exported["high_risk_mrr_proxy"] >= 0).all()

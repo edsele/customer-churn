@@ -6,8 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-16A34A.svg)](LICENSE)
 
 An end-to-end customer churn analytics project built around a validated Python
-pipeline, a SQLite analytics mart, reusable SQL analysis, and a Tableau-ready
-customer export. It is designed to answer two practical retention questions:
+pipeline, a SQLite analytics mart, reusable SQL analysis, and native Power BI
+plus Tableau-ready dashboard outputs. It is designed to answer two practical retention questions:
 which segments deserve investigation, and which accounts should be reviewed
 first for a retention intervention.
 
@@ -16,13 +16,23 @@ first for a retention intervention.
 | Data engineering | Validated raw ingestion, cleaning, feature documentation, lineage, and audit reports |
 | Analysis | Reproducible EDA figures and 14 reusable SQLite queries |
 | Machine learning | Three Scikit-Learn classifiers, training-only tuning, source-disjoint holdout, and out-of-fold scoring |
-| Decision support | Probability-weighted MRR exposure, high-risk worklist, and Tableau specifications |
+| Decision support | Native Power BI executive report, probability-weighted MRR exposure, high-risk worklist, and Tableau specifications |
 
 ![Executive dashboard preview](dashboard/screenshots/executive_summary_preview.png)
 
 *The image is a Python-generated layout preview from the scored export. It is
 not represented as a Tableau workbook screenshot. The Tableau build materials
 are in [`dashboard/`](dashboard/).*
+
+## Power BI dashboard
+
+The repository includes a native Power BI Desktop report:
+[`Customer_Churn_Analytics.pbix`](dashboard/powerbi/Customer_Churn_Analytics.pbix).
+Its executive page is built from 7,043 observed, scored customer records and
+includes KPI cards, churn by contract, a predicted-risk distribution,
+revenue-at-risk by contract, and interactive Contract and Internet Service
+slicers. The report's embedded data opens immediately; the reproducible source
+and refresh guidance are in [`dashboard/powerbi/`](dashboard/powerbi/).
 
 ## Results at a glance
 
@@ -123,10 +133,10 @@ observed clean data                 lineage-labeled 21K scenario
           +---------------+---------------------+
           |                                     |
           v                                     v
-observed-only train/CV/holdout          SQLite mart and Tableau export
+observed-only train/CV/holdout          SQLite mart and dashboard exports
           |                                     |
           v                                     v
-model diagnostics and OOF scores      observed-source EDA and preview
+model diagnostics and OOF scores      observed-source EDA and dashboard assets
 ```
 
 ## Quick start
@@ -164,7 +174,7 @@ The pipeline:
 4. tunes Logistic Regression, Random Forest, and Gradient Boosting on observed training folds only;
 5. evaluates the selected model once on the untouched observed holdout;
 6. creates out-of-fold probabilities for each source profile and its scenario descendants;
-7. writes the SQLite mart, SQL-ready views, Tableau export, figures, reports, and portable preview.
+7. writes the SQLite mart, SQL-ready views, Tableau export, observed-only Power BI export, figures, reports, and portable preview.
 
 For a fast pipeline smoke run without fitting models:
 
@@ -189,7 +199,7 @@ customer-churn/
 |   |-- raw/                # IBM source CSV
 |   |-- processed/          # generated clean, feature, score, and SQLite artifacts
 |   `-- exports/            # generated Tableau-ready customer export
-|-- dashboard/              # Tableau build guide, calculations, storyboard, preview
+|-- dashboard/              # Power BI report, Tableau guide, calculations, storyboard, preview
 |-- docs/                   # technical and reporting notes
 |-- models/                 # generated fitted pipelines
 |-- reports/                # EDA, evaluation, quality, and run-manifest evidence
@@ -211,7 +221,7 @@ customer-churn/
 | [`src/feature_engineering.py`](src/feature_engineering.py) | Documented feature creation and fold-safe categorical/numeric preprocessing. |
 | [`src/modeling.py`](src/modeling.py) | Source-disjoint split, tuning, model selection, persistence, and out-of-fold dashboard scoring. |
 | [`src/evaluation.py`](src/evaluation.py) | Classification metrics, ROC/PR/calibration plots, confusion matrix, and holdout permutation importance. |
-| [`src/database.py`](src/database.py) | SQLite customer and prediction tables, integrity constraints, reporting views, and Tableau export. |
+| [`src/database.py`](src/database.py) | SQLite customer and prediction tables, integrity constraints, reporting views, and Tableau and Power BI exports. |
 | [`src/eda.py`](src/eda.py) | Repeatable observed-source EDA figures and values-driven summary. |
 | [`src/dashboard_preview.py`](src/dashboard_preview.py) | Portable executive preview using observed source records by default. |
 

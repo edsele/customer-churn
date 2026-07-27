@@ -1,5 +1,9 @@
 # Tableau Dashboard Build Guide
 
+For the native Power BI report, embedded observed-source data, and refresh
+instructions, see [`powerbi/`](powerbi/). This guide remains the Tableau-specific
+implementation reference.
+
 This directory contains the reproducible design specification for the **Customer Churn & Behavioral Analytics** Tableau dashboard. It is intended to be built in Tableau Desktop or Tableau Public from the scored pipeline export.
 
 No Tableau workbook (`.twb`/`.twbx`) or verified Tableau screenshot is

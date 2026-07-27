@@ -15,6 +15,7 @@ paths:
   models_dir: "models"
   figures_dir: "reports/figures"
   tableau_export: "data/exports/tableau_dashboard_data.csv"
+  powerbi_export: "dashboard/powerbi/data/customer_churn_observed_dashboard.csv"
   dashboard_preview: "dashboard/screenshots/executive_summary_preview.png"
 
 data:

@@ -16,7 +16,7 @@ from typing import Any
 
 from src.config import load_config, resolve_path, setup_logging
 from src.dashboard_preview import generate_executive_summary_preview
-from src.database import export_tableau_dataset, initialize_database
+from src.database import export_powerbi_dataset, export_tableau_dataset, initialize_database
 from src.eda import run_eda
 from src.evaluation import generate_evaluation_report
 from src.feature_engineering import run_feature_engineering
@@ -54,6 +54,7 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
     if skip_training:
         initialize_database(featured)
         export_tableau_dataset(featured)
+        export_powerbi_dataset(featured)
         run_eda(featured)
         summary["training"] = "skipped"
         _write_run_manifest(summary)
@@ -78,6 +79,7 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
 
     initialize_database(scored)
     export_tableau_dataset(scored)
+    powerbi_export_path = export_powerbi_dataset(scored)
     run_eda(scored)
     preview_path = generate_executive_summary_preview(scored)
 
@@ -87,6 +89,7 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
             "selection_cv_roc_auc": best_model.selection_score,
             "holdout_metrics": evaluation["holdout_metrics"],
             "dashboard_preview": str(preview_path.relative_to(resolve_path("."))),
+            "powerbi_export": str(powerbi_export_path.relative_to(resolve_path("."))),
         }
     )
     _write_run_manifest(summary)

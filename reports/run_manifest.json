@@ -17,13 +17,14 @@
     "average_precision": 0.7310316638746893
   },
   "dashboard_preview": "dashboard\\screenshots\\executive_summary_preview.png",
+  "powerbi_export": "dashboard\\powerbi\\data\\customer_churn_observed_dashboard.csv",
   "run_context": {
-    "generated_at_utc": "2026-07-27T03:09:17.346428Z",
-    "git_revision": "fbdd8644c0b529ef57125f9c6ee7932e085edda7",
+    "generated_at_utc": "2026-07-27T03:49:50.765313Z",
+    "git_revision": "a10ba8127bb098f97450947fc4d1c7aecbf4f0f2",
     "python_version": "3.10.11",
     "platform": "Windows-10-10.0.26200-SP0",
     "raw_data_sha256": "88be4b93fbe0cc83421af1c503794c97c342eca914c1576db7c276e61d61358a",
-    "config_sha256": "3a694b737a56675fbcfaf99f07056bff6b75747ad86d458bb84819457ef96cda",
+    "config_sha256": "fec6ff0f98a43d10e688ceef580afc4566a62dafa00d3c944b06677d9f320709",
     "package_versions": {
       "joblib": "1.4.2",
       "matplotlib": "3.8.3",
