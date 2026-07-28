@@ -14,7 +14,7 @@ SELECT
     ROUND(100.0 * AVG(CASE WHEN observed_churn = 1 THEN 1.0 ELSE 0.0 END), 2)
         AS observed_churn_rate_pct
 FROM v_customer_segments
-WHERE churn_probability IS NOT NULL
+WHERE is_high_risk = 1
 GROUP BY record_source, risk_band, contract_type, tenure_segment
 HAVING COUNT(*) >= 25
 ORDER BY total_revenue_at_risk DESC, avg_churn_probability DESC;

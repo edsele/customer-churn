@@ -14,6 +14,7 @@ from src.database import (
     run_sql_script,
 )
 from src.feature_engineering import engineer_features
+from src.modeling import assign_risk_bands
 from src.preprocessing import clean_data, load_raw_data
 
 
@@ -23,11 +24,7 @@ def _scored_fixture() -> pd.DataFrame:
     data = engineer_features(clean_data(raw.head(80)))
     data["churn_probability"] = [round(index / len(data), 4) for index in range(len(data))]
     data["predicted_churn_probability"] = data["churn_probability"]
-    data["risk_band"] = pd.cut(
-        data["churn_probability"],
-        bins=[-0.01, 0.35, 0.5, 1.0],
-        labels=["Low", "Medium", "High"],
-    ).astype(str)
+    data["risk_band"] = assign_risk_bands(data["churn_probability"], threshold=0.5)
     data["is_high_risk"] = (data["churn_probability"] >= 0.5).astype(int)
     data["decision_threshold"] = 0.5
     data["revenue_at_risk"] = data["MonthlyCharges"] * data["churn_probability"]
@@ -49,6 +46,7 @@ def test_database_views_and_sql_queries_execute(tmp_path: Path) -> None:
     assert int(primary_key.iloc[0]) == 1
     high_risk = execute_query("SELECT * FROM v_high_risk_customers", database_path)
     assert not high_risk.empty
+    assert high_risk["risk_band"].eq("High").all()
 
     for script_path in sorted(Path("sql").glob("[0-9][0-9]_*.sql")):
         if script_path.name == "00_create_views.sql":

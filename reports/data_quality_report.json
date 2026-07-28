@@ -5,7 +5,9 @@
   "invalid_churn_values": 0,
   "messages": [],
   "missing_columns": [],
-  "missing_values": {},
+  "missing_values": {
+    "TotalCharges": 11
+  },
   "observed_churn_rate": 0.2653698707936959,
   "output_rows": 7043,
   "passed": true,

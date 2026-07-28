@@ -52,13 +52,14 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
     }
 
     if skip_training:
-        initialize_database(featured)
-        export_tableau_dataset(featured)
-        export_powerbi_dataset(featured)
         run_eda(featured)
         summary["training"] = "skipped"
-        _write_run_manifest(summary)
-        logger.info("Pipeline completed without model training.")
+        summary["scored_artifacts"] = "preserved; run the full pipeline to refresh them"
+        _write_run_manifest(summary, resolve_path("reports/smoke_run_manifest.json"))
+        logger.info(
+            "Pipeline smoke run completed without model training; scored database and dashboard "
+            "artifacts were preserved."
+        )
         return summary
 
     results, split = train_models(featured)
@@ -101,9 +102,9 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
     return summary
 
 
-def _write_run_manifest(summary: dict[str, Any]) -> None:
+def _write_run_manifest(summary: dict[str, Any], output_path: Path | None = None) -> None:
     """Persist a traceable machine-readable record of the current pipeline run."""
-    output_path = resolve_path("reports/run_manifest.json")
+    output_path = output_path or resolve_path("reports/run_manifest.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {**summary, "run_context": _build_run_context()}
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -118,6 +119,7 @@ def _build_run_context() -> dict[str, Any]:
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "git_revision": _git_revision(),
+        "git_dirty": _git_is_dirty(),
         "python_version": platform.python_version(),
         "platform": platform.platform(),
         "raw_data_sha256": _sha256_file(raw_path),
@@ -175,6 +177,22 @@ def _git_revision() -> str | None:
     return result.stdout.strip() or None
 
 
+def _git_is_dirty() -> bool | None:
+    """Return whether tracked or untracked files differed when the run was recorded."""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=resolve_path("."),
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return bool(result.stdout.strip())
+
+
 def main(argv: list[str] | None = None) -> int:
     """Parse CLI options and execute the pipeline."""
     parser = argparse.ArgumentParser(
@@ -183,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-training",
         action="store_true",
-        help="Build validated data, EDA, SQLite, and Tableau exports without model scores.",
+        help="Run validation and EDA without changing scored model, SQL, or dashboard artifacts.",
     )
     parser.add_argument(
         "--log-level",

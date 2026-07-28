@@ -66,6 +66,7 @@ def test_validate_raw_data_passes() -> None:
     assert report.invalid_churn_values == 0
     assert report.range_violations == {}
     assert report.coercion_failures == {}
+    assert report.missing_values == {"TotalCharges": 11}
 
 
 def test_validate_rejects_nonblank_numeric_coercion_failures(

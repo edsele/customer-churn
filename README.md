@@ -1,7 +1,7 @@
 # Customer Churn & Behavioral Analytics
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC)](tests/)
+[![Quality checks](https://github.com/edsele/customer-churn/actions/workflows/ci.yml/badge.svg)](https://github.com/edsele/customer-churn/actions/workflows/ci.yml)
 [![Style](https://img.shields.io/badge/style-ruff-261230)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-16A34A.svg)](LICENSE)
 
@@ -15,45 +15,46 @@ first for a retention intervention.
 |---|---|
 | Data engineering | Validated raw ingestion, cleaning, feature documentation, lineage, and audit reports |
 | Analysis | Reproducible EDA figures and 14 reusable SQLite queries |
-| Machine learning | Three Scikit-Learn classifiers, training-only tuning, source-disjoint holdout, and out-of-fold scoring |
-| Decision support | Native Power BI executive report, probability-weighted MRR exposure, high-risk worklist, and Tableau specifications |
+| Machine learning | Three Scikit-Learn classifiers, training-only tuning, stratified holdout validation, and out-of-fold scoring |
+| Decision support | Native Power BI executive report, model-estimated MRR exposure, SQL/Tableau-ready high-risk worklist, and Tableau specifications |
 
 ![Executive dashboard preview](dashboard/screenshots/executive_summary_preview.png)
 
-*The image is a Python-generated layout preview from the scored export. It is
-not represented as a Tableau workbook screenshot. The Tableau build materials
-are in [`dashboard/`](dashboard/).*
+*Static Python preview from the scored export. The native Power BI report is
+linked below; Tableau materials in [`dashboard/`](dashboard/) are build
+specifications, not a published workbook.*
 
 ## Power BI dashboard
 
 The repository includes a native Power BI Desktop report:
 [`Customer_Churn_Analytics.pbix`](dashboard/powerbi/Customer_Churn_Analytics.pbix).
-Its executive page is built from 7,043 observed, scored customer records and
-includes KPI cards, churn by contract, a predicted-risk distribution,
-revenue-at-risk by contract, and interactive Contract and Internet Service
-slicers. The report's embedded data opens immediately; the reproducible source
-and refresh guidance are in [`dashboard/powerbi/`](dashboard/powerbi/).
+Its executive page embeds 7,043 observed, scored customer records and includes
+KPI cards, churn by contract, a predicted-risk distribution, revenue-at-risk by
+contract, and interactive Contract and Internet Service slicers. The embedded
+data opens immediately; refresh it from a new pipeline run before sharing. The
+reproducible source and refresh guidance are in
+[`dashboard/powerbi/`](dashboard/powerbi/).
 
 ## Results at a glance
 
-The current reproducible run selected Gradient Boosting by training-only
-cross-validated ROC-AUC, then evaluated it once on an untouched 20% holdout of
-the observed source customers.
+The latest verified local run selected Gradient Boosting by training-only
+cross-validated ROC-AUC, then evaluated it once on an untouched, stratified 20%
+holdout of the observed source customers.
 
 | Holdout metric | Result |
 |---|---:|
-| Accuracy | 82.26% |
-| Precision | 78.24% |
-| Recall | 51.51% |
-| F1 | 62.12% |
-| ROC-AUC | **86.92%** |
-| Average precision | 73.10% |
+| Accuracy | 80.77% |
+| Precision | 67.82% |
+| Recall | 52.41% |
+| F1 | 59.13% |
+| ROC-AUC | **84.72%** |
+| Average precision | 66.61% |
 
-| Candidate model | Accuracy | Precision | Recall | F1 | ROC-AUC |
+| Candidate model (training-CV mean) | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---:|---:|---:|---:|---:|
-| Logistic Regression | 80.32% | 66.21% | 50.06% | 57.01% | 84.34% |
-| Random Forest | 76.61% | 53.76% | **73.95%** | **62.22%** | 84.13% |
-| Gradient Boosting | 79.85% | 65.05% | 49.26% | 56.03% | **84.44%** |
+| Logistic Regression | 80.74% | 67.29% | 53.38% | 59.48% | 84.74% |
+| Random Forest | 76.93% | 54.73% | **75.85%** | **63.56%** | 84.66% |
+| Gradient Boosting | 80.74% | 67.45% | 53.18% | 59.43% | **84.99%** |
 
 The model is intended for risk ranking and human-led review, not automatic
 retention decisions. Full results, calibration, confusion matrix, precision-
@@ -83,7 +84,7 @@ of 7,043 customers with 21 columns and a historical `Churn` outcome.
 |---|---|
 | Source | [IBM Telco Customer Churn](https://github.com/IBM/telco-customer-churn-on-icp4d) |
 | Observed customers | 7,043 |
-| Target | `Churn` (`1` = churned, `0` = retained) |
+| Target | `Churn` (`Yes`/`No` in raw data; encoded `1`/`0` after cleaning) |
 | Observed churn prevalence | 26.54% |
 | Raw file checksum | SHA-256 `88BE4B93FBE0CC83421AF1C503794C97C342ECA914C1576DB7C276E61D61358A` |
 | Optional analytics scenario | 21,000 rows: 7,043 observed plus 13,957 lineage-labeled scenario descendants |
@@ -130,13 +131,16 @@ observed clean data                 lineage-labeled 21K scenario
                           v
             documented feature engineering
                           |
+                          v
+       observed-only train/CV/holdout and model selection
+                          |
+                          v
+       source-aware out-of-fold scoring of the analytics scenario
+                          |
           +---------------+---------------------+
           |                                     |
           v                                     v
-observed-only train/CV/holdout          SQLite mart and dashboard exports
-          |                                     |
-          v                                     v
-model diagnostics and OOF scores      observed-source EDA and dashboard assets
+observed-source EDA and model evidence    SQLite mart and dashboard exports
 ```
 
 ## Quick start
@@ -176,11 +180,14 @@ The pipeline:
 6. creates out-of-fold probabilities for each source profile and its scenario descendants;
 7. writes the SQLite mart, SQL-ready views, Tableau export, observed-only Power BI export, figures, reports, and portable preview.
 
-For a fast pipeline smoke run without fitting models:
+For a fast validation and EDA smoke run without fitting models:
 
 ```bash
 python run_pipeline.py --skip-training
 ```
+
+This leaves the scored SQLite mart and Power BI/Tableau exports unchanged. Run
+the full pipeline before reviewing or sharing model, SQL, or dashboard results.
 
 ### 3. Verify quality checks
 
@@ -219,15 +226,15 @@ customer-churn/
 |---|---|
 | [`src/preprocessing.py`](src/preprocessing.py) | Schema, range, type, target-label, duplicate-ID, and scenario-distribution validation; cleaning and lineage. |
 | [`src/feature_engineering.py`](src/feature_engineering.py) | Documented feature creation and fold-safe categorical/numeric preprocessing. |
-| [`src/modeling.py`](src/modeling.py) | Source-disjoint split, tuning, model selection, persistence, and out-of-fold dashboard scoring. |
+| [`src/modeling.py`](src/modeling.py) | Stratified and group-aware validation, tuning, model selection, persistence, and out-of-fold dashboard scoring. |
 | [`src/evaluation.py`](src/evaluation.py) | Classification metrics, ROC/PR/calibration plots, confusion matrix, and holdout permutation importance. |
 | [`src/database.py`](src/database.py) | SQLite customer and prediction tables, integrity constraints, reporting views, and Tableau and Power BI exports. |
 | [`src/eda.py`](src/eda.py) | Repeatable observed-source EDA figures and values-driven summary. |
 | [`src/dashboard_preview.py`](src/dashboard_preview.py) | Portable executive preview using observed source records by default. |
 
-Each run writes [`reports/run_manifest.json`](reports/run_manifest.json) with
-the raw-data checksum, configuration checksum, Python and package versions, and
-the Git revision available at execution time.
+Each full run writes [`reports/run_manifest.json`](reports/run_manifest.json)
+with the raw-data checksum, configuration checksum, Python and package versions,
+Git revision, and working-tree state available at execution time.
 
 ## Feature engineering
 
@@ -250,9 +257,11 @@ support data in a production system.
 ## Machine learning methodology
 
 - **Population:** only the 7,043 observed IBM customer snapshots.
-- **Holdout:** deterministic 20% stratified, source-disjoint partition.
-- **Tuning:** five-fold `StratifiedGroupKFold` on training records only, with
-  ROC-AUC as the selection metric.
+- **Holdout:** deterministic 20% stratified partition of observed records;
+  source profiles are kept together if they repeat.
+- **Tuning:** five-fold stratified cross-validation on training records only,
+  with source groups preserved if a source profile repeats, and ROC-AUC as the
+  selection metric.
 - **Preprocessing:** a Scikit-Learn `ColumnTransformer` inside each candidate
   pipeline with median/most-frequent imputation, standard scaling, and one-hot
   encoding.
@@ -321,6 +330,8 @@ this section.
 - Add actual CRM, support, billing-event, and campaign-response data.
 - Introduce temporal validation after obtaining churn-event dates.
 - Calibrate the operating threshold with intervention cost, capacity, and uplift.
+- Treat probability-weighted MRR exposure as a model-estimated prioritization
+  proxy until probabilities are calibrated and validated on a future period.
 - Add data contracts, drift monitoring, scheduled orchestration, and access
   controls for a production deployment.
 - Use treatment-effect modeling after collecting randomized retention outcomes.

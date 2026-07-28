@@ -3,11 +3,11 @@
 [`Customer_Churn_Analytics.pbix`](Customer_Churn_Analytics.pbix) is a native,
 interactive Power BI Desktop report for the customer-churn project. It embeds
 the observed-source snapshot used at build time, so it opens without an
-immediate refresh. The refreshable customer-level source is generated locally
-at `data/customer_churn_observed_dashboard.csv` by the pipeline and is kept
-out of version control as a rebuildable artifact.
+immediate refresh. The refreshable customer-level source is generated at
+`dashboard/powerbi/data/customer_churn_observed_dashboard.csv` by the pipeline
+and is kept out of version control as a rebuildable artifact.
 
-## Executive Summary page
+## Included executive page
 
 The report is scoped to the 7,043 independently observed IBM Telco customer
 records. It deliberately excludes the project's lineage-labeled 21K prototype
@@ -23,9 +23,12 @@ The page contains:
 - Interactive Contract and Internet Service slicers that filter the KPI block
   and every supporting visual.
 
-At the report's unfiltered default state, the KPI strip shows 7,043 customers,
-26.5% observed churn, $456,117 in monthly revenue proxy, $138,573 in
-probability-weighted monthly revenue at risk, and 1,465 high-risk customers.
+After a full pipeline run and Power BI refresh, reconcile the unfiltered KPI
+values before sharing the report. Use
+[`13_scoring_coverage_and_value_at_risk.sql`](../../sql/13_scoring_coverage_and_value_at_risk.sql)
+for exposure and high-risk-count checks, and
+[`14_retention_snapshot.sql`](../../sql/14_retention_snapshot.sql) for customer
+count and observed-churn checks. The run manifest supplies model provenance.
 
 ## Metric guardrails
 
@@ -33,7 +36,7 @@ probability-weighted monthly revenue at risk, and 1,465 high-risk customers.
 |---|---|---|
 | Observed churn rate | Churned observed customers / observed customers | Historical outcome, not a forecast. |
 | Monthly revenue proxy | Sum of `MonthlyCharges` | Snapshot MRR proxy; not a finance ledger or monthly time series. |
-| Revenue at risk | Sum of `MonthlyCharges × predicted churn probability` | Probability-weighted monthly exposure, not booked loss. |
+| Revenue at risk | Sum of `MonthlyCharges × predicted churn probability` | Model-estimated probability-weighted monthly exposure, not booked loss. |
 | High-risk customers | Probability at or above the model decision threshold (0.50) | A review queue signal, not an automatic retention decision. |
 | Remaining-revenue proxy | Average documented 72-month-horizon estimate | A planning proxy, not approved customer lifetime value. |
 
@@ -47,7 +50,8 @@ See [`DAX_MEASURES.md`](DAX_MEASURES.md) for the report measure definitions.
 3. To refresh from a newly generated local CSV, use **Transform data → Data
    source settings** and point the existing connection to
    `dashboard/powerbi/data/customer_churn_observed_dashboard.csv` in your clone.
-4. Refresh, validate the default KPI values against the table above, and save.
+4. Refresh, validate the default KPI values with the SQL checks above, rename
+   the page **Executive Summary** if it retains a default name, and save.
 
 The source has one row per customer, a non-null unique `customerID`, an
 observed historical churn label, and an out-of-fold model probability. The

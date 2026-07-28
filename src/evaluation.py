@@ -69,7 +69,8 @@ def run_cross_validation(
     folds = min(int(config["modeling"]["cv_folds"]), len(X))
     if folds < 2:
         raise ValueError("At least two observations are required for cross-validation.")
-    if groups is not None:
+    uses_group_cv = groups is not None and groups.nunique() < len(groups)
+    if uses_group_cv:
         cv = StratifiedGroupKFold(
             n_splits=min(folds, int(groups.nunique())),
             shuffle=True,
@@ -95,7 +96,7 @@ def run_cross_validation(
         X,
         y,
         cv=cv,
-        groups=groups,
+        groups=groups if uses_group_cv else None,
         n_jobs=config["modeling"]["n_jobs"],
         return_train_score=False,
         scoring=scoring,
@@ -292,7 +293,9 @@ def generate_evaluation_report(
         "model_name": model_name,
         "evaluation_protocol": {
             "population": "Observed IBM Telco customer snapshots only",
-            "holdout": "20% source-disjoint, stratified holdout",
+            "holdout": (
+                "20% stratified observed holdout; source groups are kept together when they repeat"
+            ),
             "selection": "ROC-AUC cross-validation on training data only",
             "threshold": 0.5,
         },

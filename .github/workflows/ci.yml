@@ -23,5 +23,7 @@ jobs:
         run: python -m ruff check .
       - name: Test
         run: python -m pytest -q
-      - name: Data-pipeline smoke test
-        run: python run_pipeline.py --skip-training
+      - name: Full data-pipeline build
+        run: python run_pipeline.py
+      - name: SQL analytics verification
+        run: python run_sql.py

@@ -86,10 +86,11 @@ def validate_data(df: pd.DataFrame) -> ValidationReport:
     if report.duplicate_ids:
         report.messages.append(f"Found {report.duplicate_ids} duplicate customer IDs.")
 
+    normalized_missing = df.replace(r"^\s*$", np.nan, regex=True)
     report.missing_values = {
-        column: int(df[column].isna().sum())
-        for column in df.columns
-        if int(df[column].isna().sum()) > 0
+        column: int(normalized_missing[column].isna().sum())
+        for column in normalized_missing.columns
+        if int(normalized_missing[column].isna().sum()) > 0
     }
 
     for column, (minimum, maximum) in validation_config["numeric_ranges"].items():

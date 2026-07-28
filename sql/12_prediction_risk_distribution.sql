@@ -6,8 +6,10 @@ SELECT
     record_source,
     risk_band,
     COUNT(*) AS customer_count,
-    ROUND(100.0 * AVG(CASE WHEN churn_probability IS NOT NULL THEN 1.0 ELSE 0.0 END), 2)
-        AS scored_customer_pct,
+    ROUND(
+        100.0 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY record_source),
+        2
+    ) AS customer_share_pct,
     ROUND(AVG(churn_probability), 4) AS avg_predicted_churn_probability,
     ROUND(100.0 * AVG(CASE WHEN observed_churn = 1 THEN 1.0 ELSE 0.0 END), 2)
         AS observed_churn_rate_pct,

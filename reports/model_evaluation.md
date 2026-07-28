@@ -5,7 +5,7 @@
 ## Evaluation protocol
 
 - **Population:** Observed IBM Telco customer snapshots only
-- **Holdout:** 20% source-disjoint, stratified holdout
+- **Holdout:** 20% stratified observed holdout; source groups are kept together when they repeat
 - **Selection:** ROC-AUC cross-validation on training data only
 - **Classification threshold:** 0.50
 
@@ -13,13 +13,13 @@
 
 | Metric | Score |
 |---|---:|
-| Accuracy | 0.8226 |
-| Balanced Accuracy | 0.7293 |
-| Precision | 0.7824 |
-| Recall | 0.5151 |
-| F1 | 0.6212 |
-| Roc Auc | 0.8692 |
-| Average Precision | 0.7310 |
+| Accuracy | 0.8077 |
+| Balanced Accuracy | 0.7171 |
+| Precision | 0.6782 |
+| Recall | 0.5241 |
+| F1 | 0.5913 |
+| Roc Auc | 0.8472 |
+| Average Precision | 0.6661 |
 
 ## Candidate comparison (training CV)
 
@@ -27,22 +27,22 @@ These values are from training folds only; the final holdout did not participate
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---:|---:|---:|---:|---:|
-| logistic_regression | 0.8032 | 0.6621 | 0.5006 | 0.5701 | 0.8434 |
-| random_forest | 0.7661 | 0.5376 | 0.7395 | 0.6222 | 0.8413 |
-| gradient_boosting | 0.7985 | 0.6505 | 0.4926 | 0.5603 | 0.8444 |
+| logistic_regression | 0.8074 | 0.6729 | 0.5338 | 0.5948 | 0.8474 |
+| random_forest | 0.7693 | 0.5473 | 0.7585 | 0.6356 | 0.8466 |
+| gradient_boosting | 0.8074 | 0.6745 | 0.5318 | 0.5943 | 0.8499 |
 
 ## Top holdout permutation features
 
-- `tenure`: 0.0669 AUC decrease
-- `Contract`: 0.0523 AUC decrease
-- `InternetService`: 0.0102 AUC decrease
-- `OnlineSecurity`: 0.0057 AUC decrease
-- `TotalCharges`: 0.0043 AUC decrease
-- `TechSupport`: 0.0036 AUC decrease
-- `MonthlyCharges`: 0.0032 AUC decrease
-- `payment_risk_flag`: 0.0014 AUC decrease
-- `OnlineBackup`: 0.0014 AUC decrease
-- `PaperlessBilling`: 0.0012 AUC decrease
+- `tenure`: 0.0528 AUC decrease
+- `Contract`: 0.0486 AUC decrease
+- `InternetService`: 0.0106 AUC decrease
+- `OnlineSecurity`: 0.0068 AUC decrease
+- `TotalCharges`: 0.0042 AUC decrease
+- `TechSupport`: 0.0041 AUC decrease
+- `MonthlyCharges`: 0.0029 AUC decrease
+- `PaperlessBilling`: 0.0027 AUC decrease
+- `MultipleLines`: 0.0026 AUC decrease
+- `payment_risk_flag`: 0.0011 AUC decrease
 
 ## Business implications
 

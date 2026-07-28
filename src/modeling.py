@@ -1,4 +1,4 @@
-"""Model training, source-disjoint validation, and risk scoring utilities."""
+"""Model training, group-aware validation, and risk scoring utilities."""
 
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ class ModelResult:
 
 
 def prepare_modeling_data(df: pd.DataFrame) -> ModelingSplit:
-    """Create a source-disjoint holdout from observed customer records only.
+    """Create an observed-only holdout while preventing source-profile leakage.
 
     Scenario rows are intentionally excluded from the default model evidence:
     they are useful for visualizing a larger analytics dataset but are derived
@@ -103,14 +103,20 @@ def prepare_modeling_data(df: pd.DataFrame) -> ModelingSplit:
     test_size = float(data_config["test_size"])
     seed = config["project"]["random_seed"]
 
-    if groups.nunique() >= 10 and 1 / test_size == round(1 / test_size):
+    has_repeated_sources = groups.nunique() < len(groups)
+    if has_repeated_sources and 1 / test_size == round(1 / test_size):
         n_splits = int(round(1 / test_size))
+        if groups.nunique() < n_splits:
+            raise ValueError(
+                "Source-disjoint validation requires at least one source group per holdout fold."
+            )
         splitter = StratifiedGroupKFold(
             n_splits=n_splits,
             shuffle=True,
             random_state=seed,
         )
         train_indices, test_indices = next(splitter.split(X, y, groups))
+        split_description = "group-aware, source-disjoint"
     else:
         train_indices, test_indices = train_test_split(
             np.arange(len(observed)),
@@ -118,6 +124,7 @@ def prepare_modeling_data(df: pd.DataFrame) -> ModelingSplit:
             random_state=seed,
             stratify=y,
         )
+        split_description = "stratified"
 
     split = ModelingSplit(
         X_train=X.iloc[train_indices].reset_index(drop=True),
@@ -131,7 +138,8 @@ def prepare_modeling_data(df: pd.DataFrame) -> ModelingSplit:
     )
     _validate_source_disjoint_split(split)
     logger.info(
-        "Prepared observed-only source-disjoint split: %d train / %d test records.",
+        "Prepared observed-only %s split: %d train / %d test records.",
+        split_description,
         len(split.X_train),
         len(split.X_test),
     )
@@ -250,6 +258,7 @@ def train_models(
     if config["modeling"].get("enable_xgboost", False) and "xgboost" not in requested_names:
         requested_names.append("xgboost")
     cv = _build_group_cv(config, split.train_groups)
+    uses_group_cv = isinstance(cv, StratifiedGroupKFold)
     results: dict[str, ModelResult] = {}
 
     for name in requested_names:
@@ -266,7 +275,8 @@ def train_models(
             config,
         )
         logger.info("Tuning %s using training data only.", name)
-        search.fit(split.X_train, split.y_train, groups=split.train_groups)
+        fit_kwargs = {"groups": split.train_groups} if uses_group_cv else {}
+        search.fit(split.X_train, split.y_train, **fit_kwargs)
 
         from src.evaluation import run_cross_validation
 
@@ -274,7 +284,7 @@ def train_models(
             search.best_estimator_,
             split.X_train,
             split.y_train,
-            groups=split.train_groups,
+            groups=split.train_groups if uses_group_cv else None,
         )
         results[name] = ModelResult(
             name=name,
@@ -295,11 +305,20 @@ def train_models(
     return results, split
 
 
-def _build_group_cv(config: dict[str, Any], groups: pd.Series) -> StratifiedGroupKFold:
-    """Create deterministic group-aware folds for tuning and reporting."""
+def _build_group_cv(
+    config: dict[str, Any],
+    groups: pd.Series,
+) -> StratifiedGroupKFold | StratifiedKFold:
+    """Create stratified folds, preserving source groups when they repeat."""
     folds = min(int(config["modeling"]["cv_folds"]), int(groups.nunique()))
     if folds < 2:
         raise ValueError("At least two distinct source groups are required for CV.")
+    if groups.nunique() == len(groups):
+        return StratifiedKFold(
+            n_splits=folds,
+            shuffle=True,
+            random_state=config["project"]["random_seed"],
+        )
     return StratifiedGroupKFold(
         n_splits=folds,
         shuffle=True,
@@ -312,7 +331,7 @@ def _make_search(
     parameter_space: dict[str, list[Any]],
     search_type: str,
     n_iter: int,
-    cv: StratifiedGroupKFold,
+    cv: StratifiedGroupKFold | StratifiedKFold,
     config: dict[str, Any],
 ) -> GridSearchCV | RandomizedSearchCV:
     """Instantiate a reproducible parameter search object."""
@@ -363,21 +382,35 @@ def score_analytics_scenario(
     scored = scenario.copy()
     observed_mask = scored[record_source_col].isin({observed_label, "original"})
     observed = scored.loc[observed_mask].copy()
-    if observed[source_col].duplicated().any():
-        raise ValueError("Observed scoring records must have unique source customer IDs.")
-
-    fold_count = min(config["modeling"]["cv_folds"], len(observed))
-    splitter = StratifiedKFold(
-        n_splits=fold_count,
-        shuffle=True,
-        random_state=config["project"]["random_seed"],
-    )
     probabilities = pd.Series(np.nan, index=scored.index, dtype=float)
     observed_X = observed[feature_columns].reset_index(drop=True)
     observed_y = observed[churn_col].astype(int).reset_index(drop=True)
     observed_sources = observed[source_col].astype(str).reset_index(drop=True)
+    has_repeated_sources = observed_sources.nunique() < len(observed_sources)
+    fold_count = min(
+        int(config["modeling"]["cv_folds"]),
+        int(observed_sources.nunique()) if has_repeated_sources else len(observed),
+    )
+    if fold_count < 2:
+        raise ValueError(
+            "At least two observed source profiles are required for out-of-fold scoring."
+        )
+    if has_repeated_sources:
+        splitter = StratifiedGroupKFold(
+            n_splits=fold_count,
+            shuffle=True,
+            random_state=config["project"]["random_seed"],
+        )
+        fold_iterator = splitter.split(observed_X, observed_y, observed_sources)
+    else:
+        splitter = StratifiedKFold(
+            n_splits=fold_count,
+            shuffle=True,
+            random_state=config["project"]["random_seed"],
+        )
+        fold_iterator = splitter.split(observed_X, observed_y)
 
-    for train_indices, validation_indices in splitter.split(observed_X, observed_y):
+    for train_indices, validation_indices in fold_iterator:
         fold_model = clone(pipeline)
         fold_model.fit(observed_X.iloc[train_indices], observed_y.iloc[train_indices])
         validation_sources = set(observed_sources.iloc[validation_indices])
@@ -394,12 +427,7 @@ def score_analytics_scenario(
     # Tableau uses the explicit `predicted_` label; SQLite keeps the shorter
     # canonical prediction-table field name above.
     scored["predicted_churn_probability"] = scored["churn_probability"]
-    scored["risk_band"] = pd.cut(
-        scored["churn_probability"],
-        bins=[-0.001, 0.35, threshold, 1.0],
-        labels=["Low", "Medium", "High"],
-        include_lowest=True,
-    ).astype(str)
+    scored["risk_band"] = assign_risk_bands(scored["churn_probability"], threshold)
     scored["is_high_risk"] = (scored["churn_probability"] >= threshold).astype(int)
     scored["revenue_at_risk"] = (
         scored["MonthlyCharges"] * scored["churn_probability"]
@@ -412,6 +440,23 @@ def score_analytics_scenario(
     if scored[id_col].duplicated().any():
         raise RuntimeError("Scored scenario must retain unique customer IDs.")
     return scored
+
+
+def assign_risk_bands(probabilities: pd.Series, threshold: float) -> pd.Series:
+    """Assign mutually consistent Low, Medium, and High risk bands.
+
+    The High band begins at the configured decision threshold so dashboard
+    banding, high-risk counts, and retention worklists use one definition.
+    """
+    if not 0.35 < threshold <= 1.0:
+        raise ValueError("Risk threshold must be greater than 0.35 and no greater than 1.0.")
+    return pd.cut(
+        probabilities,
+        bins=[-np.inf, 0.35, threshold, np.inf],
+        labels=["Low", "Medium", "High"],
+        right=False,
+        include_lowest=True,
+    ).astype(str)
 
 
 def save_models(
@@ -440,7 +485,7 @@ def save_models(
 
 
 def _save_test_split(split: ModelingSplit) -> Path:
-    """Persist an auditable, source-disjoint holdout contract without features leakage."""
+    """Persist an auditable holdout contract without feature leakage."""
     path = resolve_path("data/processed/test_holdout.csv")
     path.parent.mkdir(parents=True, exist_ok=True)
     holdout = split.X_test.copy()

@@ -1,4 +1,4 @@
-"""Tests for source-disjoint splitting, model pipelines, and risk scoring."""
+"""Tests for stratified, source-aware splitting, model pipelines, and risk scoring."""
 
 from __future__ import annotations
 
@@ -8,7 +8,12 @@ from sklearn.dummy import DummyClassifier
 
 from src.evaluation import compute_metrics
 from src.feature_engineering import build_preprocessor, engineer_features, get_feature_columns
-from src.modeling import build_pipeline, prepare_modeling_data, score_analytics_scenario
+from src.modeling import (
+    assign_risk_bands,
+    build_pipeline,
+    prepare_modeling_data,
+    score_analytics_scenario,
+)
 from src.preprocessing import augment_dataset, clean_data, load_raw_data
 
 
@@ -21,7 +26,7 @@ def featured_observed_data() -> pd.DataFrame:
     return engineer_features(clean_data(pd.concat([positives, negatives], ignore_index=True)))
 
 
-def test_prepare_modeling_data_is_source_disjoint(
+def test_prepare_modeling_data_is_stratified_and_source_nonoverlapping(
     featured_observed_data: pd.DataFrame,
 ) -> None:
     split = prepare_modeling_data(featured_observed_data)
@@ -30,6 +35,7 @@ def test_prepare_modeling_data_is_source_disjoint(
     assert len(split.X_test) == len(split.y_test)
     assert not (set(split.train_groups) & set(split.test_groups))
     assert set(split.y_train.unique()).issubset({0, 1})
+    assert split.y_test.mean() == pytest.approx(featured_observed_data["Churn"].mean())
 
 
 def test_synthetic_rows_are_excluded_from_default_model_population(
@@ -88,3 +94,33 @@ def test_out_of_fold_scenario_scoring_has_complete_probability_contract(
     assert scored["predicted_churn_probability"].equals(scored["churn_probability"])
     assert set(scored["risk_band"]).issubset({"Low", "Medium", "High"})
     assert set(scored["score_source"]) == {"out_of_fold_observed_model"}
+
+
+def test_out_of_fold_scoring_keeps_repeated_source_profiles_together(
+    featured_observed_data: pd.DataFrame,
+) -> None:
+    scenario = featured_observed_data.copy()
+    duplicate = scenario.iloc[[0]].copy()
+    duplicate["customerID"] = "DUPLICATE-SOURCE"
+    scenario = pd.concat([scenario, duplicate], ignore_index=True)
+
+    split = prepare_modeling_data(featured_observed_data)
+    pipeline = build_pipeline(DummyClassifier(strategy="prior"))
+    pipeline.fit(split.X_train, split.y_train)
+    scored = score_analytics_scenario(scenario, pipeline, "dummy")
+
+    repeated_source = featured_observed_data.iloc[0]["source_customer_id"]
+    repeated_scores = scored.loc[
+        scored["source_customer_id"] == repeated_source,
+        "churn_probability",
+    ]
+    assert len(repeated_scores) == 2
+    assert repeated_scores.nunique() == 1
+
+
+def test_risk_bands_match_the_high_risk_threshold() -> None:
+    probabilities = pd.Series([0.0, 0.3499, 0.35, 0.4999, 0.5, 1.0])
+    bands = assign_risk_bands(probabilities, threshold=0.5)
+
+    assert bands.tolist() == ["Low", "Low", "Medium", "Medium", "High", "High"]
+    assert (bands.eq("High") == probabilities.ge(0.5)).all()

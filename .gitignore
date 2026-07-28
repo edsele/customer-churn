@@ -36,6 +36,7 @@ models/*
 reports/figures/*
 !reports/figures/.gitkeep
 !reports/figures/*.png
+reports/smoke_run_manifest.json
 
 # Keep the portable dashboard preview; add verified Tableau screenshots here.
 dashboard/screenshots/*
