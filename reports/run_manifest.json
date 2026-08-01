@@ -1,5 +1,5 @@
 {
-  "project_version": "1.1.1",
+  "project_version": "1.1.2",
   "observed_records": 7043,
   "analytics_scenario_records": 21000,
   "validation_passed": true,
@@ -19,13 +19,13 @@
   "dashboard_preview": "dashboard\\screenshots\\executive_summary_preview.png",
   "powerbi_export": "dashboard\\powerbi\\data\\customer_churn_observed_dashboard.csv",
   "run_context": {
-    "generated_at_utc": "2026-08-01T19:10:50.508920Z",
-    "git_revision": "3014af22d89ad25f7473b27ff8fc8fbf3b6ed657",
+    "generated_at_utc": "2026-08-01T21:04:35.512696Z",
+    "git_revision": "94d79bbc90c452e3741f70c169237a7e14874ca5",
     "git_dirty_before_run": false,
     "python_version": "3.10.11",
     "platform": "Windows-10-10.0.26200-SP0",
     "raw_data_sha256": "16320c9c1ec72448db59aa0a26a0b95401046bef5d02fd3aeb906448e3055e91",
-    "config_sha256": "a69057677afcdf5dbff01af2c45a895df48062bb997240894f1459b1b07252e6",
+    "config_sha256": "2717aba3d48fb20140bdd4de6b330f5d1515baccdb7cbabf91708b9649bd9046",
     "package_versions": {
       "joblib": "1.4.2",
       "matplotlib": "3.8.3",

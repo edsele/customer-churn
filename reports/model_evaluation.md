@@ -18,12 +18,12 @@
 | Precision | 0.6782 |
 | Recall | 0.5241 |
 | F1 | 0.5913 |
-| Roc Auc | 0.8472 |
+| ROC-AUC | 0.8472 |
 | Average Precision | 0.6661 |
 
 ## Candidate comparison (training CV)
 
-These values are from training folds only; the final holdout did not participate in model selection.
+These tuned training-fold values are selection statistics, not independent performance estimates; the final holdout did not participate in model selection.
 
 | Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---:|---:|---:|---:|---:|
