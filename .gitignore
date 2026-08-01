@@ -34,7 +34,7 @@ data/exports/*
 models/*
 !models/.gitkeep
 
-# Generated report figures are kept as project evidence.
+# Generated report figures are kept as reproducible project evidence.
 reports/figures/*
 !reports/figures/.gitkeep
 !reports/figures/*.png

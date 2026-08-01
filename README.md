@@ -326,7 +326,6 @@ workbook in Tableau Desktop or Tableau Public before claiming a published
 Tableau dashboard; then add exported workbook screenshots and a public link to
 this section.
 
-
 ## Limitations and next steps
 
 - Replace the scenario with a larger independently observed labeled source

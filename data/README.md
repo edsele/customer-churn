@@ -29,8 +29,8 @@ The project code is MIT-licensed. The upstream repository identifies the sample
 under the Apache License 2.0; see the [third-party notice](../THIRD_PARTY_NOTICES.md)
 for source and license links. The project's MIT license does not supersede or
 expand the terms for third-party material. Review the upstream terms and your
-organization's data-use requirements before using this project beyond project
-or learning work.
+organization's data-use requirements before using this project beyond learning
+or evaluation work.
 
 ## Pipeline outputs
 
@@ -45,7 +45,7 @@ or learning work.
 ## Analytics scenario policy
 
 The source dataset does not independently contain 20,000 customers. To support
-large-record dashboard and SQL prototype workflows, the pipeline creates
+dashboard prototyping and SQL analysis at a larger record count, the pipeline creates
 a 21,000-record **analytics scenario** by sampling within the observed churn
 classes and applying bounded, target-independent jitter to tenure and monthly
 charges. Each generated row is marked with:
