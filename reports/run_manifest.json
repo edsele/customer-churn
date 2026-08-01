@@ -19,9 +19,9 @@
   "dashboard_preview": "dashboard\\screenshots\\executive_summary_preview.png",
   "powerbi_export": "dashboard\\powerbi\\data\\customer_churn_observed_dashboard.csv",
   "run_context": {
-    "generated_at_utc": "2026-08-01T18:44:38.786732Z",
-    "git_revision": "afd19d726fa05f1bff29c8b7de8ae384c31a433d",
-    "git_dirty_before_run": true,
+    "generated_at_utc": "2026-08-01T19:10:50.508920Z",
+    "git_revision": "3014af22d89ad25f7473b27ff8fc8fbf3b6ed657",
+    "git_dirty_before_run": false,
     "python_version": "3.10.11",
     "platform": "Windows-10-10.0.26200-SP0",
     "raw_data_sha256": "16320c9c1ec72448db59aa0a26a0b95401046bef5d02fd3aeb906448e3055e91",
