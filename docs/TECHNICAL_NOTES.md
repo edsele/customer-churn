@@ -5,8 +5,8 @@
 This project turns a telecom customer snapshot into a reproducible retention
 analytics workflow. It validates and cleans the source data, creates documented
 behavioral features, loads a SQLite analytics mart, compares three churn models,
-and exports out-of-fold risk scores for a native Power BI report and Tableau-ready
-handoff. The business goal is to prioritize human retention outreach by
+and exports source-excluded risk scores for a native Power BI report and a
+Tableau design handoff. The business goal is to prioritize human retention outreach by
 model-estimated monthly revenue exposure, not to automate customer decisions.
 
 ## Design rationale
@@ -34,11 +34,13 @@ predicting retention for most customers. ROC-AUC evaluates ranking across
 thresholds, while precision, recall, F1, and calibration explain what happens
 at the chosen operating point.
 
-### Why are dashboard probabilities out-of-fold?
+### Why are dashboard probabilities source-excluded?
 
 Every customer is scored by a model that did not train on that customer's source
-profile. That makes the dashboard's historical risk distribution more credible
-than displaying in-sample model probabilities.
+profile. The model family and hyperparameters are selected through the
+training-only workflow, so the resulting scores support prioritization rather
+than serving as a second independent performance estimate. The untouched
+holdout remains the final estimate of model performance.
 
 ### What is `support_ticket_proxy`?
 

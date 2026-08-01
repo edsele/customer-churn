@@ -88,9 +88,7 @@ def prepare_modeling_data(df: pd.DataFrame) -> ModelingSplit:
     if source_col not in data:
         data[source_col] = data[id_col].astype(str)
     if record_source_col in data:
-        observed = data.loc[
-            data[record_source_col].isin({observed_label, "original"})
-        ].copy()
+        observed = data.loc[data[record_source_col].isin({observed_label, "original"})].copy()
     else:
         observed = data.copy()
     if observed.empty:
@@ -150,9 +148,7 @@ def _validate_source_disjoint_split(split: ModelingSplit) -> None:
     """Raise if a source profile can appear in both training and holdout data."""
     overlap = set(split.train_groups) & set(split.test_groups)
     if overlap:
-        raise RuntimeError(
-            f"Source-group leakage detected across split ({len(overlap)} groups)."
-        )
+        raise RuntimeError(f"Source-group leakage detected across split ({len(overlap)} groups).")
 
 
 def get_model_search_spaces() -> dict[str, tuple[Any, dict[str, list[Any]], str, int]]:
@@ -363,7 +359,7 @@ def score_analytics_scenario(
     pipeline: Pipeline,
     model_name: str,
 ) -> pd.DataFrame:
-    """Attach source-out-of-fold churn probabilities to all scenario records.
+    """Attach source-excluded churn probabilities to all scenario records.
 
     Each observed source customer and every scenario profile derived from it is
     scored by a model that did not train on that source.  This prevents in-sample
@@ -393,7 +389,7 @@ def score_analytics_scenario(
     )
     if fold_count < 2:
         raise ValueError(
-            "At least two observed source profiles are required for out-of-fold scoring."
+            "At least two observed source profiles are required for source-excluded scoring."
         )
     if has_repeated_sources:
         splitter = StratifiedGroupKFold(
@@ -420,7 +416,7 @@ def score_analytics_scenario(
         )[:, 1]
 
     if probabilities.isna().any():
-        raise RuntimeError("Unable to produce an out-of-fold score for every scenario row.")
+        raise RuntimeError("Unable to produce a source-excluded score for every scenario row.")
 
     threshold = float(config["modeling"]["risk_threshold"])
     # Keep presentation scores compact, but make all decisions and expected-value
@@ -435,7 +431,7 @@ def score_analytics_scenario(
     scored["model_name"] = model_name
     scored["model_version"] = config["project"]["model_version"]
     scored["decision_threshold"] = threshold
-    scored["score_source"] = "out_of_fold_observed_model"
+    scored["score_source"] = "source_excluded_observed_model"
 
     if scored[id_col].duplicated().any():
         raise RuntimeError("Scored scenario must retain unique customer IDs.")

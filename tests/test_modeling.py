@@ -110,7 +110,7 @@ def test_preprocessor_output(featured_observed_data: pd.DataFrame) -> None:
     assert matrix.shape[1] > len(numeric)
 
 
-def test_out_of_fold_scenario_scoring_has_complete_probability_contract(
+def test_source_excluded_scenario_scoring_has_complete_probability_contract(
     featured_observed_data: pd.DataFrame,
 ) -> None:
     scenario = engineer_features(
@@ -123,10 +123,10 @@ def test_out_of_fold_scenario_scoring_has_complete_probability_contract(
     assert scored["churn_probability"].between(0, 1).all()
     assert scored["predicted_churn_probability"].equals(scored["churn_probability"])
     assert set(scored["risk_band"]).issubset({"Low", "Medium", "High"})
-    assert set(scored["score_source"]) == {"out_of_fold_observed_model"}
+    assert set(scored["score_source"]) == {"source_excluded_observed_model"}
 
 
-def test_out_of_fold_scoring_keeps_repeated_source_profiles_together(
+def test_source_excluded_scoring_keeps_repeated_source_profiles_together(
     featured_observed_data: pd.DataFrame,
 ) -> None:
     scenario = featured_observed_data.copy()

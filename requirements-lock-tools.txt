@@ -1,0 +1,5 @@
+# Pinned utility environment used only to regenerate requirements.lock.
+# Keep this isolated from the project's verified runtime environment.
+pip==25.3
+pip-tools==7.6.0
+typing-extensions==4.16.0

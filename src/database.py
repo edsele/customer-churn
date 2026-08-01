@@ -143,7 +143,7 @@ def export_tableau_dataset(
     scored_customers: pd.DataFrame,
     output_path: Path | None = None,
 ) -> Path:
-    """Export a scored, Tableau-ready customer snapshot with readable labels."""
+    """Export a scored customer dataset for the Tableau build specification."""
     config = load_config()
     path = output_path or resolve_path(config["paths"]["tableau_export"])
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -214,8 +214,13 @@ def _prepare_dashboard_export(scored_customers: pd.DataFrame) -> pd.DataFrame:
     )
     export["high_risk_mrr_proxy"] = export["MonthlyCharges"] * export["HighRiskFlag"]
     export["retention_priority_value"] = export["revenue_at_risk"]
-    export["risk_band_order"] = export.get(
-        "risk_band",
-        pd.Series("Unknown", index=export.index),
-    ).map({"Low": 1, "Medium": 2, "High": 3}).fillna(4).astype(int)
+    export["risk_band_order"] = (
+        export.get(
+            "risk_band",
+            pd.Series("Unknown", index=export.index),
+        )
+        .map({"Low": 1, "Medium": 2, "High": 3})
+        .fillna(4)
+        .astype(int)
+    )
     return export

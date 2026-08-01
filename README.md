@@ -1,22 +1,22 @@
 # Customer Churn & Behavioral Analytics
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.10–3.12](https://img.shields.io/badge/Python-3.10%E2%80%933.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Quality checks](https://github.com/edsele/customer-churn/actions/workflows/ci.yml/badge.svg)](https://github.com/edsele/customer-churn/actions/workflows/ci.yml)
 [![Style](https://img.shields.io/badge/style-ruff-261230)](https://docs.astral.sh/ruff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-16A34A.svg)](LICENSE)
 
 An end-to-end customer churn analytics project built around a validated Python
-pipeline, a SQLite analytics mart, reusable SQL analysis, and native Power BI
-plus Tableau-ready dashboard outputs. It is designed to answer two practical retention questions:
-which segments deserve investigation, and which accounts should be reviewed
-first for a retention intervention.
+pipeline, a SQLite analytics mart, reusable SQL analysis, a native Power BI
+executive report, and a Tableau design specification. It is designed to answer
+two practical retention questions: which segments deserve investigation, and
+which accounts should be reviewed first for a retention intervention.
 
 | Capability | Current implementation |
 |---|---|
 | Data engineering | Validated raw ingestion, cleaning, feature documentation, lineage, and audit reports |
 | Analysis | Reproducible EDA figures and 14 reusable SQLite queries |
-| Machine learning | Three Scikit-Learn classifiers, training-only tuning, stratified holdout validation, and out-of-fold scoring |
-| Decision support | Native Power BI executive report, model-estimated MRR exposure, SQL/Tableau-ready high-risk worklist, and Tableau specifications |
+| Machine learning | Three Scikit-Learn classifiers, training-only tuning, stratified holdout validation, and source-excluded scoring |
+| Decision support | Native Power BI executive report, model-estimated MRR exposure, SQL-ready high-risk worklist, and Tableau build specifications |
 
 ![Executive dashboard preview](dashboard/screenshots/executive_summary_preview.png)
 
@@ -56,9 +56,11 @@ holdout of the observed source customers.
 | Random Forest | 76.93% | 54.73% | **75.85%** | **63.56%** | 84.66% |
 | Gradient Boosting | 80.74% | 67.45% | 53.18% | 59.43% | **84.99%** |
 
-The model is intended for risk ranking and human-led review, not automatic
-retention decisions. Full results, calibration, confusion matrix, precision-
-recall curve, and holdout permutation importance are available in
+The candidate CV values are tuned selection statistics, not independent
+generalization estimates; the untouched holdout is the final performance
+estimate. The model is intended for risk ranking and human-led review, not
+automatic retention decisions. Full results, calibration, confusion matrix,
+precision-recall curve, and holdout permutation importance are available in
 [`reports/model_evaluation.md`](reports/model_evaluation.md).
 
 ## Business problem
@@ -138,7 +140,7 @@ observed clean data                 lineage-labeled 21K scenario
        observed-only train/CV/holdout and model selection
                           |
                           v
-       source-aware out-of-fold scoring of the analytics scenario
+       source-aware, source-excluded scoring of the analytics scenario
                           |
           +---------------+---------------------+
           |                                     |
@@ -180,7 +182,7 @@ The pipeline:
 3. engineers documented customer features;
 4. tunes Logistic Regression, Random Forest, and Gradient Boosting on observed training folds only;
 5. evaluates the selected model once on the untouched observed holdout;
-6. creates out-of-fold probabilities for each source profile and its scenario descendants;
+6. creates source-excluded probabilities for each source profile and its scenario descendants;
 7. writes the SQLite mart, SQL-ready views, Tableau export, observed-only Power BI export, figures, reports, and portable preview.
 
 For a fast validation and EDA smoke run without fitting models:
@@ -196,9 +198,44 @@ the full pipeline before reviewing or sharing model, SQL, or dashboard results.
 
 ```bash
 python -m ruff check .
-python -m pytest -q
+python -m ruff format --check .
+python -m pytest --cov=src --cov-report=term-missing
 python run_sql.py
 ```
+
+The test suite enforces at least 70% branch coverage across `src`.
+
+### 4. Developer workflow
+
+Install the local hooks after installing the verified dependencies:
+
+```bash
+python -m pre_commit install
+python -m pre_commit run --all-files
+```
+
+`requirements.txt` declares supported direct dependency ranges.
+`requirements.lock` is the generated, hash-verified install contract used by
+CI. Refresh it only in a controlled dependency update using a dedicated,
+pinned lock-tool environment.
+
+On Windows PowerShell:
+
+```powershell
+python -m venv .lock-tools
+.\.lock-tools\Scripts\python.exe -m pip install -r requirements-lock-tools.txt
+.\.lock-tools\Scripts\python.exe -m piptools compile --allow-unsafe --strip-extras --generate-hashes --output-file=requirements.lock requirements.txt
+```
+
+On macOS or Linux:
+
+```bash
+python3 -m venv .lock-tools
+.lock-tools/bin/python -m pip install -r requirements-lock-tools.txt
+.lock-tools/bin/python -m piptools compile --allow-unsafe --strip-extras --generate-hashes --output-file=requirements.lock requirements.txt
+```
+
+Do not commit the local tool environment.
 
 ## Project structure
 
@@ -208,7 +245,7 @@ customer-churn/
 |-- data/
 |   |-- raw/                # IBM source CSV
 |   |-- processed/          # generated clean, feature, score, and SQLite artifacts
-|   `-- exports/            # generated Tableau-ready customer export
+|   `-- exports/            # generated Tableau build dataset
 |-- dashboard/              # Power BI report, Tableau guide, calculations, storyboard, preview
 |-- docs/                   # technical and reporting notes
 |-- models/                 # generated fitted pipelines
@@ -219,7 +256,8 @@ customer-churn/
 |-- run_pipeline.py         # full pipeline CLI
 |-- run_sql.py              # SQL query runner
 |-- requirements.txt        # supported dependency ranges
-|-- requirements.lock       # direct pins used for the verified environment
+|-- requirements.lock       # fully resolved, hash-verified dependency graph
+|-- requirements-lock-tools.txt # pinned tooling for refreshing the dependency lock
 `-- pyproject.toml          # package metadata and tool configuration
 ```
 
@@ -229,7 +267,7 @@ customer-churn/
 |---|---|
 | [`src/preprocessing.py`](src/preprocessing.py) | Schema, range, type, target-label, duplicate-ID, and scenario-distribution validation; cleaning and lineage. |
 | [`src/feature_engineering.py`](src/feature_engineering.py) | Documented feature creation and fold-safe categorical/numeric preprocessing. |
-| [`src/modeling.py`](src/modeling.py) | Stratified and group-aware validation, tuning, model selection, persistence, and out-of-fold dashboard scoring. |
+| [`src/modeling.py`](src/modeling.py) | Stratified and group-aware validation, tuning, model selection, persistence, and source-excluded dashboard scoring. |
 | [`src/evaluation.py`](src/evaluation.py) | Classification metrics, ROC/PR/calibration plots, confusion matrix, and holdout permutation importance. |
 | [`src/database.py`](src/database.py) | SQLite customer and prediction tables, integrity constraints, reporting views, and Tableau and Power BI exports. |
 | [`src/eda.py`](src/eda.py) | Repeatable observed-source EDA figures and values-driven summary. |
@@ -271,8 +309,11 @@ support data in a production system.
   encoding.
 - **Models:** Logistic Regression, Random Forest, and Gradient Boosting.
 - **Final evaluation:** a single evaluation on the untouched observed holdout.
-- **Dashboard scoring:** five-fold out-of-fold probabilities so a source record
-  is scored by a model that did not train on it.
+- **Dashboard scoring:** five-fold source-excluded probabilities so a source
+  record is scored by an estimator that did not fit that source profile. The
+  model family and hyperparameters are selected by the training-only workflow,
+  so these scores are prioritization evidence rather than a second independent
+  performance estimate.
 
 The configured high-risk threshold is 0.50, matching the evaluation report.
 In a real retention workflow, threshold selection should reflect contact
@@ -306,7 +347,7 @@ fails.
 ## Tableau handoff
 
 The pipeline exports `data/exports/tableau_dashboard_data.csv` with observed
-outcomes, out-of-fold probabilities, risk bands, revenue-at-risk estimates,
+outcomes, source-excluded probabilities, risk bands, revenue-at-risk estimates,
 customer lifecycle fields, and source lineage.
 
 The repository includes a professional build package:

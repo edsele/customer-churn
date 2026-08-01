@@ -40,9 +40,7 @@ def test_release_version_is_consistent_across_project_metadata() -> None:
     assert pipeline.load_config()["project"]["version"] == __version__
 
 
-def test_write_run_manifest_uses_pre_captured_context(
-    tmp_path: Path, monkeypatch: object
-) -> None:
+def test_write_run_manifest_uses_pre_captured_context(tmp_path: Path, monkeypatch: object) -> None:
     """Writing a manifest must not replace provenance captured before the run."""
     output_path = tmp_path / "run_manifest.json"
     context = {"git_dirty_before_run": False, "raw_data_sha256": "example"}
@@ -84,7 +82,7 @@ def test_smoke_run_captures_context_before_generated_outputs(
     monkeypatch.setattr(
         pipeline,
         "run_preprocessing_pipeline",
-        lambda export: (calls.append("preprocessing") or (featured, validation)),
+        lambda export: calls.append("preprocessing") or (featured, validation),
     )
     monkeypatch.setattr(
         pipeline,

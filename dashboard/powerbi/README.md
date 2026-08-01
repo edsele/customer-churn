@@ -54,7 +54,7 @@ See [`DAX_MEASURES.md`](DAX_MEASURES.md) for the report measure definitions.
    the page **Executive Summary** if it retains a default name, and save.
 
 The source has one row per customer, a non-null unique `customerID`, an
-observed historical churn label, and an out-of-fold model probability. The
+observed historical churn label, and a source-excluded model probability. The
 pipeline creates it with `export_powerbi_dataset`, which filters on
 `record_source = observed` before writing the report source.
 
@@ -67,5 +67,6 @@ For stakeholder review, the report supports a concise narrative:
    month-to-month relationships.
 3. Use the risk distribution to size the outreach queue, then filter by
    Contract and Internet Service to define a retention cohort.
-4. Treat model probability as prioritization evidence and confirm outcomes
-   through an experiment or controlled retention program.
+4. Treat model probability as prioritization evidence, not a second independent
+   performance estimate, and confirm outcomes through an experiment or
+   controlled retention program.

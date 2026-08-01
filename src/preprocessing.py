@@ -82,9 +82,16 @@ def validate_data(df: pd.DataFrame) -> ValidationReport:
         report.messages.append(f"Missing required columns: {report.missing_columns}")
         return report
 
+    reject_duplicate_ids = validation_config.get("reject_duplicate_ids", True)
+    if not isinstance(reject_duplicate_ids, bool):
+        raise ValueError("validation.reject_duplicate_ids must be a boolean.")
+
     report.duplicate_ids = int(df[id_col].astype("string").duplicated().sum())
     if report.duplicate_ids:
         report.messages.append(f"Found {report.duplicate_ids} duplicate customer IDs.")
+        if reject_duplicate_ids:
+            report.passed = False
+            report.messages.append("Duplicate customer IDs detected.")
 
     normalized_missing = df.replace(r"^\s*$", np.nan, regex=True)
     report.missing_values = {
@@ -124,7 +131,7 @@ def validate_data(df: pd.DataFrame) -> ValidationReport:
 
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Standardize types, remove duplicate IDs, and impute defensible values."""
+    """Standardize types, deduplicate IDs, and impute defensible values."""
     config = load_config()
     id_col = config["data"]["id_column"]
     churn_col = config["data"]["churn_column"]

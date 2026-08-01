@@ -38,6 +38,16 @@ logger = logging.getLogger(__name__)
 
 plt.style.use("seaborn-v0_8-whitegrid")
 
+METRIC_DISPLAY_NAMES = {
+    "accuracy": "Accuracy",
+    "balanced_accuracy": "Balanced Accuracy",
+    "precision": "Precision",
+    "recall": "Recall",
+    "f1": "F1",
+    "roc_auc": "ROC-AUC",
+    "average_precision": "Average Precision",
+}
+
 
 def compute_metrics(
     y_true: np.ndarray | pd.Series,
@@ -324,8 +334,7 @@ def _serialize_candidates(
     comparison: dict[str, dict[str, float]] = {}
     for name, result in candidates.items():
         comparison[name] = {
-            metric: float(summary["mean"])
-            for metric, summary in result.cv_metrics.items()
+            metric: float(summary["mean"]) for metric, summary in result.cv_metrics.items()
         }
         comparison[name]["selection_roc_auc"] = float(result.selection_score)
     return comparison
@@ -385,7 +394,7 @@ def _format_report_markdown(report: dict[str, Any]) -> str:
         "|---|---:|",
     ]
     for metric, value in report["holdout_metrics"].items():
-        lines.append(f"| {metric.replace('_', ' ').title()} | {value:.4f} |")
+        lines.append(f"| {METRIC_DISPLAY_NAMES.get(metric, metric)} | {value:.4f} |")
 
     if report["candidate_comparison"]:
         lines.extend(
@@ -393,8 +402,8 @@ def _format_report_markdown(report: dict[str, Any]) -> str:
                 "",
                 "## Candidate comparison (training CV)",
                 "",
-                "These values are from training folds only; the final holdout did not "
-                "participate in model selection.",
+                "These tuned training-fold values are selection statistics, not independent "
+                "performance estimates; the final holdout did not participate in model selection.",
                 "",
                 "| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |",
                 "|---|---:|---:|---:|---:|---:|",

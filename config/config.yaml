@@ -1,6 +1,6 @@
 project:
   name: "Customer Churn & Behavioral Analytics"
-  version: "1.1.1"
+  version: "1.1.2"
   model_version: "2026.08"
   random_seed: 42
 
@@ -29,6 +29,9 @@ data:
   synthetic_label: "synthetic_cohort"
 
 validation:
+  # Preserve the one-record-per-customer contract. Set false only when an
+  # explicitly approved source-deduplication policy (first record wins) is intended.
+  reject_duplicate_ids: true
   required_columns:
     - customerID
     - gender

@@ -1,4 +1,4 @@
-"""Portable dashboard preview generated from the Tableau-ready export.
+"""Portable dashboard preview generated from the Tableau build dataset.
 
 This is a repository preview of the intended executive layout, not a Tableau
 workbook screenshot. The Tableau build specification in ``dashboard/`` remains
@@ -62,7 +62,7 @@ def generate_executive_summary_preview(
     figure.text(
         0.05,
         0.938,
-        f"Executive dashboard preview | {source_scope} | model scores are out-of-fold",
+        f"Executive dashboard preview | {source_scope} | model scores are source-excluded",
         fontsize=10,
         color="#475569",
     )
@@ -127,7 +127,7 @@ def generate_executive_summary_preview(
     )
     probability_axis.set(
         title="Predicted churn probability distribution",
-        xlabel="Out-of-fold probability",
+        xlabel="Source-excluded probability",
         ylabel="Observed source customers",
     )
     probability_axis.legend(fontsize=8, frameon=False)
@@ -209,7 +209,7 @@ def generate_executive_summary_preview(
         0.02,
         0.14,
         "- Churn is a historical observed outcome\n"
-        "- Probabilities are out-of-fold model scores\n"
+        "- Probabilities are source-excluded model scores\n"
         "- Revenue and support measures are directional proxies",
         fontsize=7.5,
         color="#64748b",

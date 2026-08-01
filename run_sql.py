@@ -13,6 +13,21 @@ from src.database import execute_query
 logger = logging.getLogger(__name__)
 
 
+def resolve_query_file(query_name: str) -> Path:
+    """Return one repository SQL asset selected by a safe filename only."""
+    requested_path = Path(query_name)
+    if not query_name or requested_path.name != query_name or requested_path.suffix != ".sql":
+        raise ValueError("--query must be a .sql filename in the repository sql directory.")
+
+    directory = resolve_path("sql").resolve()
+    query_path = (directory / requested_path).resolve()
+    if query_path.parent != directory:
+        raise ValueError("--query must be a .sql filename in the repository sql directory.")
+    if not query_path.is_file():
+        raise FileNotFoundError(f"SQL query file was not found: {requested_path.name}")
+    return query_path
+
+
 def run_all_queries(sql_dir: Path | None = None) -> int:
     """Execute all SQL query files, returning the number of failures."""
     directory = sql_dir or resolve_path("sql")
@@ -41,15 +56,15 @@ def main(argv: list[str] | None = None) -> int:
     setup_logging()
 
     if args.query:
-        path = resolve_path(f"sql/{args.query}")
         try:
+            path = resolve_query_file(args.query)
             result = execute_query(path.read_text(encoding="utf-8"))
             print(result.to_string(index=False))
         except (OSError, ValueError) as exc:
-            logger.error("Failed to run %s: %s", path.name, exc)
+            logger.error("Failed to run query %s: %s", args.query, exc)
             return 1
         except Exception:
-            logger.exception("Failed to run %s", path.name)
+            logger.exception("Failed to run query %s", args.query)
             return 1
         return 0
 

@@ -23,6 +23,10 @@ zero-tenure/new customer records and are converted during cleaning using
 `MonthlyCharges * tenure` (zero for the source rows). The raw file is never
 modified by the pipeline.
 
+Duplicate `customerID` values are rejected during validation by default. A
+maintainer can opt out explicitly in `config/config.yaml` only when a documented
+deduplication policy is appropriate for the input data.
+
 ## License and usage
 
 The project code is MIT-licensed. The upstream repository identifies the sample
@@ -39,8 +43,8 @@ or evaluation work.
 | `processed/customers_clean.csv` | 7,043 observed customers | Validated, deduplicated source snapshot. |
 | `processed/customers_analytics_scenario.csv` | 21,000 records | Explicitly labeled scenario for dashboard and SQL prototyping. |
 | `processed/customers_features.csv` | 21,000 records | Scenario plus documented engineered features. |
-| `processed/customers_scored.csv` | 21,000 records | Scenario plus out-of-fold model risk scores. |
-| `exports/tableau_dashboard_data.csv` | 21,000 records | Tableau-ready scored export with presentation labels. |
+| `processed/customers_scored.csv` | 21,000 records | Scenario plus source-excluded model risk scores. |
+| `exports/tableau_dashboard_data.csv` | 21,000 records | Tableau build dataset with presentation labels. |
 
 ## Analytics scenario policy
 

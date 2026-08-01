@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from src import preprocessing
 from src.feature_engineering import (
     create_tenure_bucket,
     engineer_features,
@@ -81,6 +82,33 @@ def test_validate_rejects_nonblank_numeric_coercion_failures(
     assert not report.passed
     assert report.coercion_failures == {"MonthlyCharges": 1}
     assert "Nonblank numeric values could not be parsed." in report.messages
+
+
+def test_validate_rejects_duplicate_customer_ids_by_default(
+    sample_raw_df: pd.DataFrame,
+) -> None:
+    duplicate_data = pd.concat([sample_raw_df, sample_raw_df.iloc[[0]]], ignore_index=True)
+
+    report = validate_data(duplicate_data)
+
+    assert not report.passed
+    assert report.duplicate_ids == 1
+    assert "Duplicate customer IDs detected." in report.messages
+
+
+def test_validate_allows_duplicates_only_when_explicitly_configured(
+    sample_raw_df: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    duplicate_data = pd.concat([sample_raw_df, sample_raw_df.iloc[[0]]], ignore_index=True)
+    config = preprocessing.load_config()
+    config["validation"]["reject_duplicate_ids"] = False
+    monkeypatch.setattr(preprocessing, "load_config", lambda: config)
+
+    report = preprocessing.validate_data(duplicate_data)
+
+    assert report.passed
+    assert report.duplicate_ids == 1
 
 
 def test_clean_data_handles_blank_total_charges(sample_raw_df: pd.DataFrame) -> None:
