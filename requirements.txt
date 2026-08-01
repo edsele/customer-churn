@@ -15,5 +15,5 @@ pre-commit>=3.7,<5
 ruff>=0.8,<1
 
 # Packaging and build verification
-setuptools>=68,<81
+setuptools>=68,<84
 wheel>=0.45,<1
