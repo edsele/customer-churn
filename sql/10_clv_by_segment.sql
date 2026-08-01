@@ -1,6 +1,7 @@
--- Projected customer value by service segment
--- `lifetime_value_estimate` is the modelled remaining-value feature.  It is
--- reported alongside realized charges to make that interpretation transparent.
+-- Projected customer value by service segment.
+-- `lifetime_value_estimate` is the modeled remaining-value proxy, reported
+-- alongside the cross-sectional cumulative-charge-to-date proxy. Neither is
+-- realized customer lifetime value.
 
 SELECT
     record_source,
@@ -10,7 +11,7 @@ SELECT
     COUNT(*) AS customer_count,
     ROUND(AVG(lifetime_value_estimate), 2) AS avg_projected_customer_value,
     ROUND(SUM(lifetime_value_estimate), 2) AS total_projected_customer_value,
-    ROUND(AVG(total_charges), 2) AS avg_realized_lifetime_revenue,
+    ROUND(AVG(total_charges), 2) AS avg_cumulative_charges_to_date_proxy,
     ROUND(AVG(monthly_charges), 2) AS avg_monthly_charges,
     ROUND(100.0 * AVG(CASE WHEN observed_churn = 1 THEN 1.0 ELSE 0.0 END), 2)
         AS observed_churn_rate_pct

@@ -52,8 +52,7 @@ FEATURE_DOCUMENTATION: dict[str, dict[str, str]] = {
     },
     "lifetime_value_estimate": {
         "description": (
-            "Remaining-revenue proxy: MonthlyCharges multiplied by months remaining "
-            "to a 72-month horizon."
+            "Remaining-revenue proxy: MonthlyCharges multiplied by max(72 - tenure, 0)."
         ),
         "usage": "Dashboard only",
     },
@@ -140,7 +139,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
         3
     )
     enriched["lifetime_value_estimate"] = (
-        enriched["MonthlyCharges"] * (72 - enriched["tenure"]).clip(lower=1, upper=72)
+        enriched["MonthlyCharges"] * (72 - enriched["tenure"]).clip(lower=0, upper=72)
     ).round(2)
     enriched["payment_risk_flag"] = (enriched["PaymentMethod"] == "Electronic check").astype(int)
     enriched["senior_household_flag"] = (

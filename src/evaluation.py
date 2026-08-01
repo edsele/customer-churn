@@ -276,8 +276,9 @@ def generate_evaluation_report(
     reports_dir = resolve_path("reports")
     reports_dir.mkdir(parents=True, exist_ok=True)
 
-    y_pred = pipeline.predict(X_test)
     y_proba = pipeline.predict_proba(X_test)[:, 1]
+    threshold = float(config["modeling"]["risk_threshold"])
+    y_pred = (y_proba >= threshold).astype(int)
     metrics = compute_metrics(y_test, y_pred, y_proba)
     importance = compute_feature_importance(pipeline, X_test, y_test)
     importance.to_csv(reports_dir / "feature_importance.csv", index=False)
@@ -297,7 +298,7 @@ def generate_evaluation_report(
                 "20% stratified observed holdout; source groups are kept together when they repeat"
             ),
             "selection": "ROC-AUC cross-validation on training data only",
-            "threshold": 0.5,
+            "threshold": threshold,
         },
         "holdout_metrics": metrics,
         "training_cross_validation": training_cv or {},
@@ -341,12 +342,12 @@ def _business_implications(
     ]
     if metrics["recall"] >= 0.70:
         implications.append(
-            "The default threshold captures a substantial share of observed churners, "
+            "The configured threshold captures a substantial share of observed churners, "
             "which supports a broad proactive-retention queue."
         )
     else:
         implications.append(
-            "The default threshold favors precision over coverage; test a lower operating "
+            "The configured threshold favors precision over coverage; test a lower operating "
             "threshold only with a defined retention-budget trade-off."
         )
     if metrics["precision"] >= 0.60:

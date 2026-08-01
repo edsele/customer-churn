@@ -37,8 +37,11 @@ def generate_executive_summary_preview(
     )
     if probability is None:
         probability = pd.Series(np.nan, index=display_data.index)
-    high_risk = int((probability >= config["modeling"]["risk_threshold"]).sum())
-    revenue_at_risk = float((display_data["MonthlyCharges"] * probability.fillna(0)).sum())
+    high_risk, revenue_at_risk = _risk_summary(
+        display_data,
+        probability,
+        float(config["modeling"]["risk_threshold"]),
+    )
 
     figure = plt.figure(figsize=(16, 9), facecolor="#f8fafc")
     grid = figure.add_gridspec(
@@ -244,6 +247,26 @@ def _select_observed_snapshot(
         if not observed.empty:
             return observed, f"observed-source snapshot (n={len(observed):,})"
     return data.copy(), f"all supplied records (n={len(data):,})"
+
+
+def _risk_summary(
+    data: pd.DataFrame,
+    probability: pd.Series,
+    threshold: float,
+) -> tuple[int, float]:
+    """Prefer raw-score-derived risk fields while retaining export compatibility."""
+    if "is_high_risk" in data:
+        high_risk = int(pd.to_numeric(data["is_high_risk"], errors="coerce").fillna(0).sum())
+    else:
+        high_risk = int((probability >= threshold).sum())
+
+    if "revenue_at_risk" in data:
+        revenue_at_risk = float(
+            pd.to_numeric(data["revenue_at_risk"], errors="coerce").fillna(0).sum()
+        )
+    else:
+        revenue_at_risk = float((data["MonthlyCharges"] * probability.fillna(0)).sum())
+    return high_risk, revenue_at_risk
 
 
 def _style_axis(axis: plt.Axes) -> None:

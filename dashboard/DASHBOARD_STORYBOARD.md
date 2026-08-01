@@ -14,9 +14,9 @@ This is the implementation specification for the Tableau dashboard. It defines t
 
 - `Churn` / `Observed Churn Rate` = historical outcome.
 - `predicted_churn_probability` = model-generated probability score.
-- `risk_band` = pipeline-generated risk category.
+- `risk_band` = pipeline-generated risk category derived from the unrounded model probability; displayed percentages may be rounded.
 - `support_ticket_proxy` = **estimated support-contact proxy**, not observed tickets, cases, or workload.
-- `MonthlyCharges` = MRR proxy; `lifetime_value_estimate` = remaining-revenue proxy.
+- `MonthlyCharges` = MRR proxy; `lifetime_value_estimate` = `MonthlyCharges x max(72 - tenure, 0)`, a remaining-revenue proxy.
 
 ## Information architecture
 

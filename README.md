@@ -86,14 +86,17 @@ of 7,043 customers with 21 columns and a historical `Churn` outcome.
 | Observed customers | 7,043 |
 | Target | `Churn` (`Yes`/`No` in raw data; encoded `1`/`0` after cleaning) |
 | Observed churn prevalence | 26.54% |
-| Raw file checksum | SHA-256 `88BE4B93FBE0CC83421AF1C503794C97C342ECA914C1576DB7C276E61D61358A` |
+| Raw file checksum | Canonical SHA-256 (LF-normalized) `16320C9C1EC72448DB59AA0A26A0B95401046BEF5D02FD3AEB906448E3055E91` |
 | Optional analytics scenario | 21,000 rows: 7,043 observed plus 13,957 lineage-labeled scenario descendants |
 
 The source does not independently contain 20,000 customers. The optional
 scenario is clearly marked with `record_source` and `source_customer_id`, and
 is used for dashboard and SQL prototyping only. It is excluded from model
 training, model evaluation, executive KPIs, and observed-source EDA findings.
-Read the [data card](data/README.md) for terms, handling, and limitations.
+The checksum is calculated after normalizing CRLF line endings to LF, which
+makes it stable across standard Git checkouts. Read the [data card](data/README.md)
+for handling and limitations, and the [third-party notice](THIRD_PARTY_NOTICES.md)
+for source and license references.
 
 ## Key EDA findings
 
@@ -233,8 +236,9 @@ customer-churn/
 | [`src/dashboard_preview.py`](src/dashboard_preview.py) | Portable executive preview using observed source records by default. |
 
 Each full run writes [`reports/run_manifest.json`](reports/run_manifest.json)
-with the raw-data checksum, configuration checksum, Python and package versions,
-Git revision, and working-tree state available at execution time.
+with the canonical raw-data checksum, configuration checksum, Python and package
+versions, Git revision, and `git_dirty_before_run` working-tree state captured
+before pipeline outputs are generated.
 
 ## Feature engineering
 
@@ -246,7 +250,7 @@ Git revision, and working-tree state available at execution time.
 | `customer_engagement_score` | Explainable service, security, tenure, and contract composite. | Yes |
 | `payment_risk_flag` | Electronic-check indicator. | Yes |
 | `contract_risk_score` | Reporting-only contract flexibility indicator. | No |
-| `lifetime_value_estimate` | 72-month-horizon remaining-revenue proxy. | No |
+| `lifetime_value_estimate` | `MonthlyCharges x max(72 - tenure, 0)`: a 72-month-horizon remaining-revenue proxy. | No |
 | `support_ticket_proxy` | Estimated support-contact proxy; not an observed ticket count. | No |
 
 The full feature contract and intended-use boundary are generated in
@@ -339,4 +343,5 @@ this section.
 ## License
 
 Project code is available under the [MIT License](LICENSE). Dataset use remains
-subject to the source publisher's terms described in the [data card](data/README.md).
+subject to the upstream terms identified in the [data card](data/README.md) and
+[third-party notice](THIRD_PARTY_NOTICES.md).

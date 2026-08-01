@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
     """Run cleaning, scenario creation, analysis, model validation, and exports."""
     config = load_config()
+    # Capture provenance before generated artifacts can change the working tree.
+    run_context = _build_run_context()
     logger.info("Starting %s v%s", config["project"]["name"], config["project"]["version"])
 
     scenario, validation = run_preprocessing_pipeline(export=True)
@@ -55,7 +57,11 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
         run_eda(featured)
         summary["training"] = "skipped"
         summary["scored_artifacts"] = "preserved; run the full pipeline to refresh them"
-        _write_run_manifest(summary, resolve_path("reports/smoke_run_manifest.json"))
+        _write_run_manifest(
+            summary,
+            resolve_path("reports/smoke_run_manifest.json"),
+            run_context=run_context,
+        )
         logger.info(
             "Pipeline smoke run completed without model training; scored database and dashboard "
             "artifacts were preserved."
@@ -93,7 +99,7 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
             "powerbi_export": str(powerbi_export_path.relative_to(resolve_path("."))),
         }
     )
-    _write_run_manifest(summary)
+    _write_run_manifest(summary, run_context=run_context)
     logger.info(
         "Pipeline complete. Selected %s with holdout ROC-AUC %.3f.",
         best_model.name,
@@ -102,11 +108,17 @@ def run_full_pipeline(skip_training: bool = False) -> dict[str, Any]:
     return summary
 
 
-def _write_run_manifest(summary: dict[str, Any], output_path: Path | None = None) -> None:
+def _write_run_manifest(
+    summary: dict[str, Any],
+    output_path: Path | None = None,
+    run_context: dict[str, Any] | None = None,
+) -> None:
     """Persist a traceable machine-readable record of the current pipeline run."""
     output_path = output_path or resolve_path("reports/run_manifest.json")
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {**summary, "run_context": _build_run_context()}
+    if run_context is None:
+        run_context = _build_run_context()
+    payload = {**summary, "run_context": run_context}
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     logger.info("Run manifest saved to %s", output_path)
 
@@ -119,24 +131,40 @@ def _build_run_context() -> dict[str, Any]:
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "git_revision": _git_revision(),
-        "git_dirty": _git_is_dirty(),
+        "git_dirty_before_run": _git_is_dirty(),
         "python_version": platform.python_version(),
         "platform": platform.platform(),
-        "raw_data_sha256": _sha256_file(raw_path),
+        "raw_data_sha256": _sha256_file(raw_path, normalize_crlf=True),
         "config_sha256": _sha256_file(config_path),
         "package_versions": _package_versions(),
     }
 
 
-def _sha256_file(path: Path) -> str | None:
-    """Return a file checksum when the input exists, otherwise ``None``."""
+def _sha256_file(path: Path, *, normalize_crlf: bool = False) -> str | None:
+    """Return a file checksum when the input exists, otherwise ``None``.
+
+    When ``normalize_crlf`` is true, CRLF sequences are hashed as LF. This
+    mirrors Git's text normalization and makes checksums stable across Windows
+    and Unix checkouts without changing the source file itself.
+    """
     if not path.exists():
         return None
 
     digest = hashlib.sha256()
     with path.open("rb") as source:
+        previous_chunk_ended_with_cr = False
         for chunk in iter(lambda: source.read(65_536), b""):
+            if normalize_crlf and previous_chunk_ended_with_cr:
+                chunk = b"\r" + chunk
+                previous_chunk_ended_with_cr = False
+            if normalize_crlf and chunk.endswith(b"\r"):
+                chunk = chunk[:-1]
+                previous_chunk_ended_with_cr = True
+            if normalize_crlf:
+                chunk = chunk.replace(b"\r\n", b"\n")
             digest.update(chunk)
+        if normalize_crlf and previous_chunk_ended_with_cr:
+            digest.update(b"\r")
     return digest.hexdigest()
 
 

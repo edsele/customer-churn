@@ -423,15 +423,15 @@ def score_analytics_scenario(
         raise RuntimeError("Unable to produce an out-of-fold score for every scenario row.")
 
     threshold = float(config["modeling"]["risk_threshold"])
+    # Keep presentation scores compact, but make all decisions and expected-value
+    # calculations from the full-precision model probabilities.
     scored["churn_probability"] = probabilities.round(4)
     # Tableau uses the explicit `predicted_` label; SQLite keeps the shorter
     # canonical prediction-table field name above.
     scored["predicted_churn_probability"] = scored["churn_probability"]
-    scored["risk_band"] = assign_risk_bands(scored["churn_probability"], threshold)
-    scored["is_high_risk"] = (scored["churn_probability"] >= threshold).astype(int)
-    scored["revenue_at_risk"] = (
-        scored["MonthlyCharges"] * scored["churn_probability"]
-    ).round(2)
+    scored["risk_band"] = assign_risk_bands(probabilities, threshold)
+    scored["is_high_risk"] = (probabilities >= threshold).astype(int)
+    scored["revenue_at_risk"] = (scored["MonthlyCharges"] * probabilities).round(2)
     scored["model_name"] = model_name
     scored["model_version"] = config["project"]["model_version"]
     scored["decision_threshold"] = threshold

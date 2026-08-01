@@ -53,6 +53,7 @@ Predicted Risk KPI = FORMAT ( [Average Predicted Churn Probability], "0.0%" )
 Average Remaining Revenue KPI = FORMAT ( [Average Remaining-Revenue Proxy], "$#,##0" )
 ```
 
-`HighRiskFlag` is generated from the reproducible model decision threshold in
-`config/config.yaml` (currently 0.50). It is intentionally not portrayed as a
-causal treatment recommendation.
+`HighRiskFlag` is generated from the unrounded model probability and the
+reproducible model decision threshold in `config/config.yaml` (currently 0.50).
+The displayed probability may be rounded for presentation. The flag is
+intentionally not portrayed as a causal treatment recommendation.

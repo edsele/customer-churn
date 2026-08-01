@@ -7,7 +7,7 @@ This reference uses the customer-level scored export described in [README.md](RE
 - The export grain is one row per `customerID`. Customer-facing KPIs still use `COUNTD([customerID])` as a guard against accidental duplication.
 - `Churn` is an **observed historical outcome**. `predicted_churn_probability` is a **model score**. Do not substitute one for the other.
 - `support_ticket_proxy` is an **estimated behavioral proxy**, not observed case-management data. Include that wording in every supporting tooltip or subtitle.
-- `risk_band` comes from the scoring pipeline and is the reporting dimension of record. The interactive threshold parameter below is only for prioritization; it should not silently rewrite the pipeline's banding.
+- `risk_band` and `HighRiskFlag` come from the scoring pipeline and are the reporting dimensions of record. They use the unrounded model probability; `predicted_churn_probability` is a four-decimal presentation field. The interactive threshold parameter below is only for what-if prioritization and should not silently rewrite the pipeline's banding.
 
 ## Source scope
 
@@ -76,7 +76,7 @@ Format: currency, zero decimals. This represents the sum of customer monthly cha
 AVG([lifetime_value_estimate])
 ```
 
-Format: currency, zero decimals. This is a 72-month-horizon remaining-revenue estimate, not a finance-approved customer lifetime value measure.
+Format: currency, zero decimals. This is `MonthlyCharges x max(72 - tenure, 0)`, a directional 72-month-horizon remaining-revenue estimate, not a finance-approved customer lifetime value measure.
 
 ## Risk and revenue-at-risk fields
 

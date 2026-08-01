@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 import pytest
 from sklearn.dummy import DummyClassifier
 
+import src.evaluation as evaluation
+from src.config import load_config
 from src.evaluation import compute_metrics
 from src.feature_engineering import build_preprocessor, engineer_features, get_feature_columns
 from src.modeling import (
@@ -15,6 +20,31 @@ from src.modeling import (
     score_analytics_scenario,
 )
 from src.preprocessing import augment_dataset, clean_data, load_raw_data
+
+
+class _BoundaryProbabilityModel:
+    """Return probabilities that round to the threshold from opposite sides."""
+
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> _BoundaryProbabilityModel:
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        probabilities = np.full(len(X), 0.25)
+        monthly_charges = X["MonthlyCharges"].to_numpy()
+        probabilities[np.isclose(monthly_charges, 199.0)] = 0.49996
+        probabilities[np.isclose(monthly_charges, 200.0)] = 0.50004
+        return np.column_stack([1 - probabilities, probabilities])
+
+
+class _ConfiguredThresholdModel:
+    """Expose a deliberate conflict between estimator and configured decisions."""
+
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        raise AssertionError("Evaluation must derive predictions from configured threshold.")
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        probabilities = np.array([0.55, 0.60, 0.65])
+        return np.column_stack([1 - probabilities, probabilities])
 
 
 @pytest.fixture(scope="module")
@@ -124,3 +154,68 @@ def test_risk_bands_match_the_high_risk_threshold() -> None:
 
     assert bands.tolist() == ["Low", "Low", "Medium", "Medium", "High", "High"]
     assert (bands.eq("High") == probabilities.ge(0.5)).all()
+
+
+def test_scoring_uses_unrounded_probabilities_for_decisions_and_revenue(
+    featured_observed_data: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scenario = featured_observed_data.copy()
+    scenario.loc[0, "MonthlyCharges"] = 199.0
+    scenario.loc[1, "MonthlyCharges"] = 200.0
+    model = _BoundaryProbabilityModel()
+    monkeypatch.setattr("src.modeling.clone", lambda _: model)
+
+    scored = score_analytics_scenario(scenario, model, "boundary")
+
+    below_threshold = scored.loc[0]
+    above_threshold = scored.loc[1]
+    assert below_threshold["churn_probability"] == pytest.approx(0.5)
+    assert above_threshold["churn_probability"] == pytest.approx(0.5)
+    assert below_threshold["risk_band"] == "Medium"
+    assert below_threshold["is_high_risk"] == 0
+    assert below_threshold["revenue_at_risk"] == pytest.approx(99.49)
+    assert above_threshold["risk_band"] == "High"
+    assert above_threshold["is_high_risk"] == 1
+    assert above_threshold["revenue_at_risk"] == pytest.approx(100.01)
+
+
+def test_evaluation_uses_the_configured_threshold_for_predictions_and_report(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    config = load_config()
+    config["modeling"]["risk_threshold"] = 0.60
+    monkeypatch.setattr(evaluation, "load_config", lambda: config)
+    monkeypatch.setattr(evaluation, "resolve_path", lambda _: tmp_path / "reports")
+    monkeypatch.setattr(
+        evaluation,
+        "compute_feature_importance",
+        lambda *_: pd.DataFrame(
+            {
+                "feature": ["MonthlyCharges"],
+                "importance_mean": [0.1],
+                "importance_std": [0.0],
+            }
+        ),
+    )
+    for function_name in (
+        "plot_roc_curve",
+        "plot_precision_recall_curve",
+        "plot_confusion_matrix",
+        "plot_calibration_curve",
+        "plot_feature_importance",
+    ):
+        monkeypatch.setattr(evaluation, function_name, lambda *_args, **_kwargs: tmp_path)
+
+    report = evaluation.generate_evaluation_report(
+        _ConfiguredThresholdModel(),
+        pd.DataFrame({"MonthlyCharges": [10.0, 20.0, 30.0]}),
+        pd.Series([0, 1, 1]),
+        "configured-threshold-test",
+        output_dir=tmp_path / "figures",
+    )
+
+    assert report["evaluation_protocol"]["threshold"] == pytest.approx(0.60)
+    assert report["holdout_metrics"]["accuracy"] == pytest.approx(1.0)
+    assert report["classification_report"]["1"]["recall"] == pytest.approx(1.0)

@@ -147,6 +147,18 @@ def test_tenure_bucket_boundaries() -> None:
     assert create_tenure_bucket(60) == "49+ loyal"
 
 
+def test_lifetime_value_estimate_has_no_remaining_value_at_horizon(
+    sample_raw_df: pd.DataFrame,
+) -> None:
+    at_horizon = sample_raw_df.copy()
+    at_horizon.loc[0, "tenure"] = 72
+    at_horizon.loc[0, "MonthlyCharges"] = 100.0
+
+    featured = engineer_features(clean_data(at_horizon))
+
+    assert featured.loc[0, "lifetime_value_estimate"] == 0.0
+
+
 def test_engineered_features_and_model_columns(sample_raw_df: pd.DataFrame) -> None:
     featured = engineer_features(clean_data(sample_raw_df))
     numeric, categorical = get_feature_columns()

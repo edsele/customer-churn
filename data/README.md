@@ -11,7 +11,12 @@ demographics, subscribed services, billing attributes, tenure, and a historical
 - Raw rows: 7,043
 - Raw columns: 21
 - Positive churn prevalence: 26.54%
-- SHA-256: `88BE4B93FBE0CC83421AF1C503794C97C342ECA914C1576DB7C276E61D61358A`
+- Canonical SHA-256 (LF-normalized): `16320C9C1EC72448DB59AA0A26A0B95401046BEF5D02FD3AEB906448E3055E91`
+
+The checksum normalizes CRLF line endings to LF before hashing, so it remains
+stable across normal Git checkouts on different operating systems. The pipeline
+records this canonical digest in its run manifest rather than a
+platform-specific file-byte hash.
 
 The raw source has 11 blank `TotalCharges` values. They correspond to
 zero-tenure/new customer records and are converted during cleaning using
@@ -20,9 +25,10 @@ modified by the pipeline.
 
 ## License and usage
 
-The project code is MIT-licensed. The dataset remains subject to the source
-publisher's terms; the project license does not grant any additional right to
-redistribute or commercialize the data. Review the source repository and your
+The project code is MIT-licensed. The upstream repository identifies the sample
+under the Apache License 2.0; see the [third-party notice](../THIRD_PARTY_NOTICES.md)
+for source and license links. The project's MIT license does not supersede or
+expand the terms for third-party material. Review the upstream terms and your
 organization's data-use requirements before using this project beyond project
 or learning work.
 
@@ -62,3 +68,7 @@ additional validation evidence.
   explicitly labeled feature-engineered proxy, not an operational ticket count.
 - `MonthlyCharges`, retention, and lifetime-value measures are directional
   snapshot proxies rather than audited revenue or causal estimates.
+- `lifetime_value_estimate` is current `MonthlyCharges` multiplied by
+  `max(72 - tenure, 0)`: a remaining-charge proxy to an assumed 72-month
+  horizon. It is not realized revenue, contractual value, or finance-approved
+  customer lifetime value.

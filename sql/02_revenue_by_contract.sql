@@ -1,6 +1,7 @@
--- Revenue and risk exposure by contract type
--- MRR is a point-in-time monthly recurring revenue snapshot; the source data
--- has no billing-date history, so this query does not imply a time series.
+-- Revenue and risk exposure by contract type.
+-- MRR is a point-in-time monthly recurring-revenue proxy. `total_charges` is
+-- a cumulative-charge-to-date proxy from the cross-sectional source, not
+-- realized lifetime revenue or an audited finance measure.
 
 SELECT
     record_source,
@@ -8,7 +9,7 @@ SELECT
     COUNT(*) AS customer_count,
     ROUND(SUM(monthly_charges), 2) AS mrr_snapshot,
     ROUND(AVG(monthly_charges), 2) AS avg_monthly_charges,
-    ROUND(SUM(total_charges), 2) AS realized_lifetime_revenue,
+    ROUND(SUM(total_charges), 2) AS cumulative_charges_to_date_proxy,
     ROUND(SUM(CASE WHEN observed_churn = 1 THEN monthly_charges ELSE 0.0 END), 2)
         AS observed_churned_mrr,
     ROUND(SUM(COALESCE(revenue_at_risk, 0.0)), 2) AS predicted_mrr_at_risk,

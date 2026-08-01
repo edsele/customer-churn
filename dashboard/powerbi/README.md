@@ -37,8 +37,8 @@ count and observed-churn checks. The run manifest supplies model provenance.
 | Observed churn rate | Churned observed customers / observed customers | Historical outcome, not a forecast. |
 | Monthly revenue proxy | Sum of `MonthlyCharges` | Snapshot MRR proxy; not a finance ledger or monthly time series. |
 | Revenue at risk | Sum of `MonthlyCharges × predicted churn probability` | Model-estimated probability-weighted monthly exposure, not booked loss. |
-| High-risk customers | Probability at or above the model decision threshold (0.50) | A review queue signal, not an automatic retention decision. |
-| Remaining-revenue proxy | Average documented 72-month-horizon estimate | A planning proxy, not approved customer lifetime value. |
+| High-risk customers | Pipeline flag derived from the unrounded probability at or above the model decision threshold (0.50) | A review queue signal, not an automatic retention decision; displayed scores may be rounded. |
+| Remaining-revenue proxy | Average `MonthlyCharges x max(72 - tenure, 0)` | A directional 72-month-horizon planning proxy, not approved customer lifetime value. |
 
 See [`DAX_MEASURES.md`](DAX_MEASURES.md) for the report measure definitions.
 

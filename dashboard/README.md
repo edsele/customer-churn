@@ -40,17 +40,22 @@ Use a Tableau extract for the published dashboard. The data is a customer-level 
 | `customerID` | Dimension / string | Customer counting and action queue | Use `COUNTD`, not `COUNT`, for customer KPIs. |
 | `Churn` | Measure / whole number | Observed churn rate | Binary historical label: `1` = churned, `0` = retained. |
 | `ChurnLabel` | Dimension / string | Readable observed-churn labels | `Yes` / `No`; use only for presentation. |
-| `predicted_churn_probability` | Measure / decimal | Risk distribution, prioritization, revenue at risk | Expected range is 0 to 1; format as a percentage. |
-| `risk_band` | Dimension / string | Risk segmentation and filtering | Pipeline-generated categorical band. Standard values are `Low`, `Medium`, and `High`. |
+| `predicted_churn_probability` | Measure / decimal | Risk distribution, prioritization, revenue at risk | Four-decimal presentation score in the 0-to-1 range; format as a percentage. |
+| `risk_band` | Dimension / string | Risk segmentation and filtering | Pipeline-generated category from the unrounded model probability. Standard values are `Low`, `Medium`, and `High`. |
 | `support_ticket_proxy` | Measure / whole number | Behavioral-support analysis | **Estimated proxy only**. It is not a count of observed support cases or tickets. |
 | `MonthlyCharges` | Measure / decimal | MRR and revenue-at-risk proxies | Format as currency. |
-| `lifetime_value_estimate` | Measure / decimal | Remaining-revenue proxy | A 72-month-horizon estimate, not a finance-approved CLV measure. |
+| `lifetime_value_estimate` | Measure / decimal | Remaining-revenue proxy | `MonthlyCharges x max(72 - tenure, 0)`; directional only, not a finance-approved CLV measure. |
 | `Contract`, `InternetService`, `PaymentMethod` | Dimensions | Segmentation and global filters | Core operational slices. |
 | `tenure`, `tenure_bucket`, `AgeGroup` | Measures / dimensions | Lifecycle and demographic analysis | `AgeGroup` is derived from the senior-citizen indicator. |
 | `customer_engagement_score`, `avg_services_purchased` | Measures | Behavioral-driver views | Engineered explanatory features. |
 | `record_source` | Dimension | Provenance filter / tooltip | Keep visible when comparing original and augmented scenario records. |
 
 If the three scoring fields—`predicted_churn_probability`, `risk_band`, and `support_ticket_proxy`—are absent, refresh the pipeline output before building. Do not substitute `contract_risk_score` for model probability; it is an engineered rule-based feature, not the scored model output.
+
+For official risk reporting, use the pipeline-generated `risk_band` and
+`HighRiskFlag`. They are derived from the unrounded model probability before
+the four-decimal presentation score is written. A displayed percentage is for
+communication only and can round at a decision boundary.
 
 ### Source scope
 

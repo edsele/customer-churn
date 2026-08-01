@@ -47,7 +47,7 @@ These values are from training folds only; the final holdout did not participate
 ## Business implications
 
 - Use scores to prioritize outreach, not as a standalone cancellation decision. The source is a historical cross-sectional snapshot, so associations are not causal.
-- The default threshold favors precision over coverage; test a lower operating threshold only with a defined retention-budget trade-off.
+- The configured threshold favors precision over coverage; test a lower operating threshold only with a defined retention-budget trade-off.
 - Positive predictions are concentrated enough to support a targeted offer test, provided campaign uplift is measured experimentally.
 - The strongest holdout permutation signals were tenure, Contract, InternetService; investigate them as retention segments rather than causal levers.
 
