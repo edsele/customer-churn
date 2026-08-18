@@ -27,8 +27,8 @@ dev = [
   "pre-commit>=3.7,<5",
   "ruff>=0.8,<1",
 ]
-xgboost = ["xgboost>=2.0,<3"]
-notebook = ["ipykernel>=6.25,<7", "jupyter>=1.0,<2"]
+xgboost = ["xgboost>=2.0,<4"]
+notebook = ["ipykernel>=6.25,<8", "jupyter>=1.0,<2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
